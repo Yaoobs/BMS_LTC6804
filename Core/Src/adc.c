@@ -127,7 +127,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-uint32_t Get_Adc1Value(uint32_t channel)   
+uint16_t Get_Adc1Value(uint32_t channel)   
 {  
 	ADC_ChannelConfTypeDef sConfig = {0};
 	sConfig.Channel = channel;
@@ -138,20 +138,20 @@ uint32_t Get_Adc1Value(uint32_t channel)
 		Error_Handler();
 	}
 	if (HAL_ADC_Start(&hadc1) != HAL_OK) {
-		return 0xFFFFFFFFU;
+		return 0xFFFF;
 	}
 	if (HAL_ADC_PollForConversion(&hadc1, 10) != HAL_OK) {
-		return 0xFFFFFFFFU;
+		return 0xFFFF;
 	}
-	return HAL_ADC_GetValue(&hadc1);
+	return (uint16_t)HAL_ADC_GetValue(&hadc1);
 }
 
-uint32_t Get_Adc1Channe0Value(void)   
+uint16_t Get_Adc1Channe0Value(void)   
 {  
 	return Get_Adc1Value(ADC_CHANNEL_0);
 }
 
-uint32_t Get_Adc1Channe9Value(void)   
+uint16_t Get_Adc1Channe9Value(void)   
 {  
 	return Get_Adc1Value(ADC_CHANNEL_9);
 }

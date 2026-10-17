@@ -35,8 +35,8 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-extern uint32_t Get_Adc1Channe0Value(void);
-extern uint32_t Get_Adc1Channe9Value(void);
+extern uint16_t Get_Adc1Channe0Value(void);
+extern uint16_t Get_Adc1Channe9Value(void);
 	
 
 /* USER CODE END Private defines */

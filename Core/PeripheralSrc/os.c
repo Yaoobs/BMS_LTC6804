@@ -58,16 +58,16 @@ static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
 #define RX_UART_CLOSE_CHG  0x07U
 
 static uint8_t rx_byte;
-unsigned char shang[50];
-int total_voltage;
-unsigned int cell_voltage[12];
-unsigned int Max, Min;
+uint8_t shang[50];
+uint16_t total_voltage;
+uint16_t cell_voltage[12];
+uint16_t Max, Min;
 
 static uint32_t adcv_tick;
 static uint8_t adcv_wait;
 uint16_t cell_codes[12];
-int SOC;
-u8 Temp_up_flag, OV_FLAG, UV_FLAG, OC_FLAG; /* 过压，欠压，过流标志 */
+int8_t SOC;
+uint8_t Temp_up_flag, OV_FLAG, UV_FLAG, OC_FLAG; /* 过压，欠压，过流标志 */
 
 #define TX_FRAME_LEN 50U
 
@@ -78,7 +78,7 @@ void LEDXToggle(void)
 
 void USART1_SendShang(const uint8_t frame[TX_FRAME_LEN])
 {
-    char vi;
+    uint8_t vi;
 
     if (frame == NULL)
     {
@@ -89,22 +89,22 @@ void USART1_SendShang(const uint8_t frame[TX_FRAME_LEN])
     shang[1] = TX_UART_HEAD_1;
     for (vi = 0; vi < 12; vi++)
     {
-        shang[vi + 2 + vi] = (char)(cell_voltage[vi] >> 8);
-        shang[vi + 3 + vi] = (char)(cell_voltage[vi] & 0x00FF);
+        shang[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
+        shang[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
     }
-    shang[32] = (char)(total_voltage >> 8);
-    shang[33] = (char)(total_voltage & 0xFF);
-    shang[34] = (char)(SOC >> 8);
-    shang[35] = (char)(SOC & 0xFF);
-    shang[36] = current >> 8;
-    shang[37] = current & 0x00FF;
+    shang[32] = (uint8_t)(total_voltage >> 8);
+    shang[33] = (uint8_t)(total_voltage & 0xFF);
+    shang[34] = (uint8_t)(SOC >> 8);
+    shang[35] = (uint8_t)(SOC & 0xFF);
+    shang[36] = (uint8_t)(current >> 8);
+    shang[37] = (uint8_t)(current & 0x00FF);
     shang[38] = temp;
     shang[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
     shang[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
-    shang[41] = (char)(Max >> 8);
-    shang[42] = (char)(Max & 0x00FF);
-    shang[43] = (char)(Min >> 8);
-    shang[44] = (char)(Min & 0x00FF);
+    shang[41] = (uint8_t)(Max >> 8);
+    shang[42] = (uint8_t)(Max & 0x00FF);
+    shang[43] = (uint8_t)(Min >> 8);
+    shang[44] = (uint8_t)(Min & 0x00FF);
 
     tx_busy = 1;
     if (HAL_UART_Transmit_IT(&huart1, (uint8_t *)frame, TX_FRAME_LEN) != HAL_OK)
@@ -317,7 +317,7 @@ void Get_SOC(void)
 
 void Get_TotalVoltage(void)
 {
-    char vi;
+    uint8_t vi;
 
     total_voltage = 0;
     for (vi = 0; vi < 12; vi++)
@@ -329,7 +329,7 @@ void Get_TotalVoltage(void)
 
 void Get_Cell_Voltage_Max_Min(void)
 {
-    char i;
+    uint8_t i;
 
     /* 第6、11、12节未接，下标5、10、11不参与比较 */
     Max = cell_voltage[0];

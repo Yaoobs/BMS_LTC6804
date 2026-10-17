@@ -3,7 +3,7 @@
 <title>Static Call Graph - [BMS_LTC6804\BMS_LTC6804.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image BMS_LTC6804\BMS_LTC6804.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Sat Oct 17 10:43:59 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Sat Oct 17 15:49:51 2026
 <BR><P>
 <H3>Maximum Stack Usage =        216 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -588,20 +588,20 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Task
 </UL>
 
-<P><STRONG><a name="[b8]"></a>Current_CalcFromAverage</STRONG> (Thumb, 78 bytes, Stack size 12 bytes, sample.o(i.Current_CalcFromAverage))
+<P><STRONG><a name="[b8]"></a>Current_CalcFromAverage</STRONG> (Thumb, 100 bytes, Stack size 12 bytes, sample.o(i.Current_CalcFromAverage))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = Current_CalcFromAverage
 </UL>
 <BR>[Called By]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Task
 </UL>
 
-<P><STRONG><a name="[69]"></a>Current_SamplePush</STRONG> (Thumb, 108 bytes, Stack size 8 bytes, sample.o(i.Current_SamplePush))
+<P><STRONG><a name="[69]"></a>Current_SamplePush</STRONG> (Thumb, 114 bytes, Stack size 8 bytes, sample.o(i.Current_SamplePush))
 <BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = Current_SamplePush &rArr; Get_Adc1Channe9Value &rArr; Get_Adc1Value &rArr; HAL_ADC_Start &rArr; ADC_Enable
 </UL>
 <BR>[Calls]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Adc1Channe9Value
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbn
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dmul
 <LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ui2d
-<LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2iz
+<LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2uiz
 </UL>
 <BR>[Called By]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Task
 </UL>
@@ -633,7 +633,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Current_SamplePush
 </UL>
 
-<P><STRONG><a name="[70]"></a>Get_Adc1Value</STRONG> (Thumb, 60 bytes, Stack size 24 bytes, adc.o(i.Get_Adc1Value))
+<P><STRONG><a name="[70]"></a>Get_Adc1Value</STRONG> (Thumb, 62 bytes, Stack size 24 bytes, adc.o(i.Get_Adc1Value))
 <BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = Get_Adc1Value &rArr; HAL_ADC_Start &rArr; ADC_Enable
 </UL>
 <BR>[Calls]<UL><LI><a href="#[73]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Start
@@ -656,7 +656,7 @@ Global Symbols
 <BR><BR>[Called By]<UL><LI><a href="#[b7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Voltage_Poll
 </UL>
 
-<P><STRONG><a name="[ca]"></a>Get_TotalVoltage</STRONG> (Thumb, 46 bytes, Stack size 16 bytes, os.o(i.Get_TotalVoltage))
+<P><STRONG><a name="[ca]"></a>Get_TotalVoltage</STRONG> (Thumb, 44 bytes, Stack size 16 bytes, os.o(i.Get_TotalVoltage))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Get_TotalVoltage
 </UL>
 <BR>[Called By]<UL><LI><a href="#[b7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Voltage_Poll
@@ -1245,14 +1245,14 @@ Global Symbols
 <P><STRONG><a name="[3d]"></a>SystemInit</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, system_stm32f1xx.o(i.SystemInit))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(.text)
 </UL>
-<P><STRONG><a name="[b9]"></a>Temp_SamplePush</STRONG> (Thumb, 144 bytes, Stack size 24 bytes, sample.o(i.Temp_SamplePush))
+<P><STRONG><a name="[b9]"></a>Temp_SamplePush</STRONG> (Thumb, 148 bytes, Stack size 24 bytes, sample.o(i.Temp_SamplePush))
 <BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = Temp_SamplePush &rArr; Get_Adc1Channe0Value &rArr; Get_Adc1Value &rArr; HAL_ADC_Start &rArr; ADC_Enable
 </UL>
 <BR>[Calls]<UL><LI><a href="#[6f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Adc1Channe0Value
 <LI><a href="#[c4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;logf
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbn
 <LI><a href="#[c2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fmul
-<LI><a href="#[c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2iz
+<LI><a href="#[c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2uiz
 <LI><a href="#[c3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
 <LI><a href="#[c1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fsub
 <LI><a href="#[c5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
@@ -1274,7 +1274,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
 </UL>
-<P><STRONG><a name="[ba]"></a>USART1_SendShang</STRONG> (Thumb, 150 bytes, Stack size 24 bytes, os.o(i.USART1_SendShang))
+<P><STRONG><a name="[ba]"></a>USART1_SendShang</STRONG> (Thumb, 152 bytes, Stack size 24 bytes, os.o(i.USART1_SendShang))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = USART1_SendShang
 </UL>
 <BR>[Calls]<UL><LI><a href="#[c8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
@@ -1423,13 +1423,13 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbn
 </UL>
 
-<P><STRONG><a name="[6e]"></a>__aeabi_d2iz</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, dfix.o(x$fpl$dfix))
-<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = __aeabi_d2iz
+<P><STRONG><a name="[6e]"></a>__aeabi_d2uiz</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, dfixu.o(x$fpl$dfixu))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = __aeabi_d2uiz
 </UL>
 <BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Current_SamplePush
 </UL>
 
-<P><STRONG><a name="[d7]"></a>_dfix</STRONG> (Thumb, 94 bytes, Stack size 32 bytes, dfix.o(x$fpl$dfix), UNUSED)
+<P><STRONG><a name="[d7]"></a>_dfixu</STRONG> (Thumb, 90 bytes, Stack size 32 bytes, dfixu.o(x$fpl$dfixu), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__fpl_dnaninf
 </UL>
 
@@ -1454,7 +1454,7 @@ Global Symbols
 
 <P><STRONG><a name="[d4]"></a>__fpl_dnaninf</STRONG> (Thumb, 156 bytes, Stack size 16 bytes, dnaninf.o(x$fpl$dnaninf), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[d8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_dmul
-<LI><a href="#[d7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_dfix
+<LI><a href="#[d7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_dfixu
 <LI><a href="#[d2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_d2f
 </UL>
 
@@ -1495,13 +1495,13 @@ Global Symbols
 <LI><a href="#[dc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__fpl_fnaninf
 </UL>
 
-<P><STRONG><a name="[c6]"></a>__aeabi_f2iz</STRONG> (Thumb, 0 bytes, Stack size 16 bytes, ffix.o(x$fpl$ffix))
-<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = __aeabi_f2iz
+<P><STRONG><a name="[c6]"></a>__aeabi_f2uiz</STRONG> (Thumb, 0 bytes, Stack size 16 bytes, ffixu.o(x$fpl$ffixu))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = __aeabi_f2uiz
 </UL>
 <BR>[Called By]<UL><LI><a href="#[b9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Temp_SamplePush
 </UL>
 
-<P><STRONG><a name="[df]"></a>_ffix</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, ffix.o(x$fpl$ffix), UNUSED)
+<P><STRONG><a name="[df]"></a>_ffixu</STRONG> (Thumb, 62 bytes, Stack size 16 bytes, ffixu.o(x$fpl$ffixu), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[dc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__fpl_fnaninf
 </UL>
 
@@ -1525,7 +1525,7 @@ Global Symbols
 
 <P><STRONG><a name="[dc]"></a>__fpl_fnaninf</STRONG> (Thumb, 140 bytes, Stack size 8 bytes, fnaninf.o(x$fpl$fnaninf), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[e0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fmul
-<LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_ffix
+<LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_ffixu
 <LI><a href="#[de]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fdiv
 <LI><a href="#[e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fsub
 <LI><a href="#[da]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fadd
