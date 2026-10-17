@@ -4,7 +4,7 @@
 #include "adc.h"
 #include <math.h>
 
-extern void Current_SamplePush(void);
+extern int Current_SamplePush(void);
 extern void Current_CalcFromAverage(void);
 extern void Temp_SamplePush(void);
 

@@ -230,6 +230,7 @@ void LTC6804_wrcfg(uint8_t config[6])
     uint16_t cfg_pec;
     uint8_t cmd_index;
     uint8_t current_byte;
+	uint16_t cmd_pec;
 
     cmd[0] = 0x00;
     cmd[1] = 0x01;
@@ -264,6 +265,7 @@ int8_t LTC6804_rdcfg(uint8_t r_config[8])
     uint16_t data_pec;
     uint16_t received_pec;
     uint8_t current_byte;
+	uint16_t cmd_pec;
 
     cmd[0] = 0x00;
     cmd[1] = 0x02;

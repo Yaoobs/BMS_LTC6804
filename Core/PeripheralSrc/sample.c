@@ -11,7 +11,7 @@ uint8_t current_mv_pos;
 uint8_t current_mv_count;
 
 /* 1 ms：采样入队，满 10 个后覆盖最旧数据 */
-void Current_SamplePush(void)
+int Current_SamplePush(void)
 {
     uint32_t Adc_value;
     int adc_mv;
@@ -19,10 +19,14 @@ void Current_SamplePush(void)
     Adc_value = Get_Adc1Channe9Value();
     if (Adc_value == 0xFFFFFFFFU)
     {
-        return;
+        return -2;
     }
 
     adc_mv = (int)(3.3 * Adc_value / 4096 * 1000);
+	if(adc_mv - CURRENT_ADC_BASE_MV > 40 || CURRENT_ADC_BASE_MV - adc_mv > 40) 
+	{
+		return -1;
+	}
     current_mv_buf[current_mv_pos] = adc_mv;
     current_mv_pos++;
     if (current_mv_pos >= CURRENT_AVG_LEN)
@@ -33,6 +37,7 @@ void Current_SamplePush(void)
     {
         current_mv_count++;
     }
+	return 0;
 }
 
 /* 10 ms：窗口平均毫伏，再换算 current */

@@ -498,7 +498,11 @@ void Os_Task(void)
 
 static void Task_1ms(void)
 {
-    Current_SamplePush();
+    if(Current_SamplePush() == -1)
+	{
+		OC_FLAG = 1;
+		Close_DSG_CHG();	
+	} 
 }
 
 static void Task_5ms(void)
