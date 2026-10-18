@@ -1,6 +1,6 @@
 #include "sample.h"
 
-uint16_t current;
+int16_t current;
 uint8_t temp;
 
 #define CURRENT_AVG_LEN      10
@@ -63,7 +63,7 @@ void Current_CalcFromAverage(void)
     }
     else if (adc < (CURRENT_ADC_BASE_MV - 2))
     {
-        current = (CURRENT_ADC_BASE_MV - adc) * 50;
+        current = -(CURRENT_ADC_BASE_MV - adc) * 50;
     }
     else
     {

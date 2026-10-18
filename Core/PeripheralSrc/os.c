@@ -96,8 +96,8 @@ void USART1_SendShang(const uint8_t frame[TX_FRAME_LEN])
     shang[33] = (uint8_t)(total_voltage & 0xFF);
     shang[34] = (uint8_t)(SOC >> 8);
     shang[35] = (uint8_t)(SOC & 0xFF);
-    shang[36] = (uint8_t)(current >> 8);
-    shang[37] = (uint8_t)(current & 0x00FF);
+    shang[36] = (uint8_t)(((uint16_t)current) >> 8);
+    shang[37] = (uint8_t)(((uint16_t)current) & 0x00FF);
     shang[38] = temp;
     shang[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
     shang[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
