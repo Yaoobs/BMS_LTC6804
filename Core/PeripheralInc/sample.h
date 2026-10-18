@@ -8,7 +8,7 @@ extern int8_t Current_SamplePush(void);
 extern void Current_CalcFromAverage(void);
 extern void Temp_SamplePush(void);
 
-extern int16_t current;
+extern int16_t Current;
 extern uint8_t temp;
 
 #endif

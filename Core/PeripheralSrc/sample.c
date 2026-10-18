@@ -1,6 +1,6 @@
 #include "sample.h"
 
-int16_t current;
+int16_t Current;
 uint8_t temp;
 
 #define CURRENT_AVG_LEN      10
@@ -40,7 +40,7 @@ int8_t Current_SamplePush(void)
 	return 0;
 }
 
-/* 10 ms：窗口平均毫伏，再换算 current */
+/* 10 ms：窗口平均毫伏，再换算 Current */
 void Current_CalcFromAverage(void)
 {
     uint16_t sum = 0;
@@ -59,15 +59,15 @@ void Current_CalcFromAverage(void)
     adc = (sum + (int)current_mv_count / 2) / (int)current_mv_count;
     if (adc > (CURRENT_ADC_BASE_MV + 2))
     {
-        current = (adc - CURRENT_ADC_BASE_MV) * 50;
+        Current = (adc - CURRENT_ADC_BASE_MV) * 50;
     }
     else if (adc < (CURRENT_ADC_BASE_MV - 2))
     {
-        current = -(CURRENT_ADC_BASE_MV - adc) * 50;
+        Current = -(CURRENT_ADC_BASE_MV - adc) * 50;
     }
     else
     {
-        current = 0;
+        Current = 0;
     }
 }
 

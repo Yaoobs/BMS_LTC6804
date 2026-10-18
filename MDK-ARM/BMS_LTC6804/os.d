@@ -42,3 +42,5 @@ bms_ltc6804\os.o: ../Core/Inc/usart.h
 bms_ltc6804\os.o: ../Core/Inc/gpio.h
 bms_ltc6804\os.o: ../Core/PeripheralInc/sample.h
 bms_ltc6804\os.o: ../Core/PeripheralInc/LTC6804.h
+bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\Ah_Integrator_Estimator.h
+bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\rtwtypes.h

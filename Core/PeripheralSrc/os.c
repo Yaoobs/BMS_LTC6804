@@ -15,6 +15,7 @@
 #include "gpio.h"
 #include "sample.h"
 #include "LTC6804.h"
+#include "Ah_Integrator_Estimator.h"
 
 uint16_t TaskCount;                  /* For task period count */
 uint8_t Period_5ms_Count;            /* 5ms task period count */
@@ -62,11 +63,12 @@ uint8_t shang[50];
 uint16_t total_voltage;
 uint16_t cell_voltage[12];
 uint16_t Max, Min;
+uint8_t InitialSOC;
 
 static uint32_t adcv_tick;
 static uint8_t adcv_wait;
 uint16_t cell_codes[12];
-int8_t SOC;
+//int8_t SOC;
 uint8_t Temp_up_flag, OV_FLAG, UV_FLAG, OC_FLAG; /* 过压，欠压，过流标志 */
 
 #define TX_FRAME_LEN 50U
@@ -96,8 +98,8 @@ void USART1_SendShang(const uint8_t frame[TX_FRAME_LEN])
     shang[33] = (uint8_t)(total_voltage & 0xFF);
     shang[34] = (uint8_t)(SOC >> 8);
     shang[35] = (uint8_t)(SOC & 0xFF);
-    shang[36] = (uint8_t)(((uint16_t)current) >> 8);
-    shang[37] = (uint8_t)(((uint16_t)current) & 0x00FF);
+    shang[36] = (uint8_t)(((uint16_t)Current) >> 8);
+    shang[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
     shang[38] = temp;
     shang[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
     shang[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
@@ -408,6 +410,7 @@ void Os_Init(void)
     HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
     Only_Open_CHG();                     /* 打开充电MOS管 */
     Only_Open_DSG();                     /* 打开放电MOS管 */
+	InitialSOC = 78;
 
 }
 
@@ -516,6 +519,7 @@ static void Task_10ms(void)
     adcv_tick = HAL_GetTick();
     adcv_wait = 1;
     Current_CalcFromAverage();
+//	Ah_Integrator_Estimator_step();
 }
 
 static void Task_50ms(void)
