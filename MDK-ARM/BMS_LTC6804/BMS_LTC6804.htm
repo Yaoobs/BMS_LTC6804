@@ -3,7 +3,7 @@
 <title>Static Call Graph - [BMS_LTC6804\BMS_LTC6804.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image BMS_LTC6804\BMS_LTC6804.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Sun Oct 18 14:54:57 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Mon Oct 19 09:18:42 2026
 <BR><P>
 <H3>Maximum Stack Usage =        216 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -588,13 +588,13 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Task
 </UL>
 
-<P><STRONG><a name="[b8]"></a>Current_CalcFromAverage</STRONG> (Thumb, 76 bytes, Stack size 12 bytes, sample.o(i.Current_CalcFromAverage))
+<P><STRONG><a name="[b8]"></a>Current_CalcFromAverage</STRONG> (Thumb, 86 bytes, Stack size 12 bytes, sample.o(i.Current_CalcFromAverage))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = Current_CalcFromAverage
 </UL>
 <BR>[Called By]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Task
 </UL>
 
-<P><STRONG><a name="[69]"></a>Current_SamplePush</STRONG> (Thumb, 114 bytes, Stack size 8 bytes, sample.o(i.Current_SamplePush))
+<P><STRONG><a name="[69]"></a>Current_SamplePush</STRONG> (Thumb, 92 bytes, Stack size 8 bytes, sample.o(i.Current_SamplePush))
 <BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = Current_SamplePush &rArr; Get_Adc1Channe9Value &rArr; Get_Adc1Value &rArr; HAL_ADC_Start &rArr; ADC_Enable
 </UL>
 <BR>[Calls]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Adc1Channe9Value
@@ -735,7 +735,8 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
-<BR>[Called By]<UL><LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wakeup_idle
+<BR>[Called By]<UL><LI><a href="#[b3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Os_Init
+<LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;wakeup_idle
 <LI><a href="#[a7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LTC6804_initialize
 </UL>
 
@@ -1169,10 +1170,11 @@ Global Symbols
 <LI><a href="#[9d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Judge_CHG_DSG
 </UL>
 
-<P><STRONG><a name="[b3]"></a>Os_Init</STRONG> (Thumb, 40 bytes, Stack size 8 bytes, os.o(i.Os_Init))
+<P><STRONG><a name="[b3]"></a>Os_Init</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, os.o(i.Os_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 152<LI>Call Chain = Os_Init &rArr; LTC6804_initialize &rArr; LTC6804_wrcfg &rArr; spi_write_array &rArr; HAL_SPI_Transmit &rArr; SPI_EndRxTxTransaction &rArr; SPI_WaitFlagStateUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[76]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADCEx_Calibration_Start
+<BR>[Calls]<UL><LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<LI><a href="#[76]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADCEx_Calibration_Start
 <LI><a href="#[a7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LTC6804_initialize
 <LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Only_Open_DSG
 <LI><a href="#[9f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Only_Open_CHG

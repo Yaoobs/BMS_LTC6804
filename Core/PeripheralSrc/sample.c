@@ -3,8 +3,8 @@
 int16_t Current;
 uint8_t temp;
 
-#define CURRENT_AVG_LEN      10
-#define CURRENT_ADC_BASE_MV  1349
+#define CURRENT_AVG_LEN      100
+#define CURRENT_ADC_BASE_MV  1368
 
 uint16_t current_mv_buf[CURRENT_AVG_LEN];
 uint8_t current_mv_pos;
@@ -23,10 +23,10 @@ int8_t Current_SamplePush(void)
     }
 
     adc_mv = (uint16_t)(3.3 * Adc_value / 4096 * 1000);
-	if(adc_mv - CURRENT_ADC_BASE_MV > 40 || CURRENT_ADC_BASE_MV - adc_mv > 40) 
-	{
-		return -1;
-	}
+//	if(((adc_mv - CURRENT_ADC_BASE_MV) > 40 ) || ((CURRENT_ADC_BASE_MV - adc_mv) > 40))
+//	{
+//		return -1;
+//	}
     current_mv_buf[current_mv_pos] = adc_mv;
     current_mv_pos++;
     if (current_mv_pos >= CURRENT_AVG_LEN)
@@ -43,7 +43,7 @@ int8_t Current_SamplePush(void)
 /* 10 ms：窗口平均毫伏，再换算 Current */
 void Current_CalcFromAverage(void)
 {
-    uint16_t sum = 0;
+    uint32_t sum = 0;
     uint16_t adc;
     uint8_t i;
 

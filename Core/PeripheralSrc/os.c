@@ -405,6 +405,7 @@ void Voltage_Poll(void)
 
 void Os_Init(void)
 {
+	HAL_Delay(5000); //初始化增加延时
     HAL_ADCEx_Calibration_Start(&hadc1); /* 校准 ADC */
 	LTC6804_initialize();                /* LTC6804初始化配置 */
     HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
@@ -501,7 +502,7 @@ void Os_Task(void)
 
 static void Task_1ms(void)
 {
-    if(Current_SamplePush() == -1)
+	if(Current_SamplePush() == -1)
 	{
 		OC_FLAG = 1;
 		Close_DSG_CHG();	
@@ -514,20 +515,24 @@ static void Task_5ms(void)
 
 static void Task_10ms(void)
 {
-    /* 10 ms 任务里只发命令 */
-    LTC6804_adcv();
-    adcv_tick = HAL_GetTick();
-    adcv_wait = 1;
-    Current_CalcFromAverage();
-//	Ah_Integrator_Estimator_step();
+
+
+
 }
 
 static void Task_50ms(void)
 {
+
 }
 
 static void Task_100ms(void)
 {
+	Current_CalcFromAverage();
+//	Ah_Integrator_Estimator_step();
+    /* 10 ms 任务里只发命令 */
+    LTC6804_adcv();
+    adcv_tick = HAL_GetTick();
+    adcv_wait = 1;
 }
 
 static void Task_1000ms(void)
