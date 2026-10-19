@@ -59,7 +59,7 @@ static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
 #define RX_UART_CLOSE_CHG  0x07U
 
 static uint8_t rx_byte;
-uint8_t shang[50];
+uint8_t tx_data[50];
 uint16_t total_voltage;
 uint16_t cell_voltage[12];
 uint16_t Max, Min;
@@ -73,46 +73,77 @@ uint8_t Temp_up_flag, OV_FLAG, UV_FLAG, OC_FLAG; /* 过压，欠压，过流标�
 
 #define TX_FRAME_LEN 50U
 
+#define RX_STR_MAX 64U
+static uint8_t rx_str[RX_STR_MAX];
+static uint8_t rx_len;
+static uint8_t rx_discard;
+static volatile uint8_t rx_ready;
+
 void LEDXToggle(void)
 {
     HAL_GPIO_TogglePin(GPIOB, LED_Ctrl_Pin);
 }
 
-void USART1_SendShang(const uint8_t frame[TX_FRAME_LEN])
+void USART1_SendData(const uint8_t *frame, uint16_t len)
 {
-    uint8_t vi;
-
-    if (frame == NULL)
+    if (frame == NULL || len == 0)
     {
         return;
     }
 
-    shang[0] = TX_UART_HEAD_0;
-    shang[1] = TX_UART_HEAD_1;
-    for (vi = 0; vi < 12; vi++)
-    {
-        shang[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
-        shang[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
-    }
-    shang[32] = (uint8_t)(total_voltage >> 8);
-    shang[33] = (uint8_t)(total_voltage & 0xFF);
-    shang[34] = (uint8_t)(SOC >> 8);
-    shang[35] = (uint8_t)(SOC & 0xFF);
-    shang[36] = (uint8_t)(((uint16_t)Current) >> 8);
-    shang[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
-    shang[38] = temp;
-    shang[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
-    shang[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
-    shang[41] = (uint8_t)(Max >> 8);
-    shang[42] = (uint8_t)(Max & 0x00FF);
-    shang[43] = (uint8_t)(Min >> 8);
-    shang[44] = (uint8_t)(Min & 0x00FF);
-
     tx_busy = 1;
-    if (HAL_UART_Transmit_IT(&huart1, (uint8_t *)frame, TX_FRAME_LEN) != HAL_OK)
+    if (HAL_UART_Transmit_IT(&huart1, (uint8_t *)frame, len) != HAL_OK)
     {
         tx_busy = 0;
     }
+}
+
+void USART1_SendTxStr(void)
+{
+    int len;
+    const char *chg;
+
+    chg = (HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
+
+    len = sprintf((char *)tx_data, "当前SOC: %u%%\r\n", (unsigned)SOC);
+    if (len <= 0 || len >= (int)sizeof(tx_data))
+    {
+        return;
+    }
+
+    len += sprintf((char *)tx_data + len, "充电MOS: %s\r\n", chg);
+    if (len <= 0 || len >= (int)sizeof(tx_data))
+    {
+        return;
+    }
+
+    USART1_SendData(tx_data, (uint16_t)len);
+}
+
+void USART1_SendTxData() 
+{
+	uint8_t vi;
+	tx_data[0] = TX_UART_HEAD_0;
+    tx_data[1] = TX_UART_HEAD_1;
+    for (vi = 0; vi < 12; vi++)
+    {
+        tx_data[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
+        tx_data[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
+    }
+    tx_data[32] = (uint8_t)(total_voltage >> 8);
+    tx_data[33] = (uint8_t)(total_voltage & 0xFF);
+    tx_data[34] = (uint8_t)(SOC >> 8);
+    tx_data[35] = (uint8_t)(SOC & 0xFF);
+    tx_data[36] = (uint8_t)(((uint16_t)Current) >> 8);
+    tx_data[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
+    tx_data[38] = temp;
+    tx_data[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
+    tx_data[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
+    tx_data[41] = (uint8_t)(Max >> 8);
+    tx_data[42] = (uint8_t)(Max & 0x00FF);
+    tx_data[43] = (uint8_t)(Min >> 8);
+    tx_data[44] = (uint8_t)(Min & 0x00FF);
+	USART1_SendData(tx_data, TX_FRAME_LEN);
 }
 
 void Only_Open_CHG(void)
@@ -141,82 +172,164 @@ void Only_Close_DSG(void)
     HAL_GPIO_WritePin(GPIOB, DSG_POWER_EN_Pin, GPIO_PIN_RESET);
 }
 
+//void RECEICE_DATA_DEAL(void)
+//{
+//    uint8_t local[RX_UART_LEN];
+
+//    if (!cmd_ready)
+//    {
+//        return;
+//    }
+
+//    local[0] = cmd[0];
+//    local[1] = cmd[1];
+//    local[2] = cmd[2];
+//    cmd_ready = 0;
+//    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
+
+//    if (local[0] != RX_UART_HEAD || local[2] != RX_UART_TAIL)
+//    {
+//        return;
+//    }
+
+//    switch (local[1])
+//    {
+//        case RX_UART_OPEN_DSG:
+//            Only_Open_DSG();
+//            break;
+//        case RX_UART_CLOSE_DSG:
+//            Only_Close_DSG();
+//            break;
+//        case RX_UART_OPEN_CHG:
+//            Only_Open_CHG();
+//            break;
+//        case RX_UART_CLOSE_CHG:
+//            Only_Close_CHG();
+//            break;
+//        default:
+//            break;
+//    }
+//}
+
+void OnUartLine(const char *line)
+{
+    /* 在这里处理 line，它不含 \r、\n，末尾已有 \0 */
+	if(strcmp(line, "放电") == 0)
+	{
+		Only_Close_CHG();
+		Only_Open_DSG();
+	}
+}
+
 void RECEICE_DATA_DEAL(void)
 {
-    uint8_t local[RX_UART_LEN];
-
-    if (!cmd_ready)
+    char local[RX_STR_MAX];
+    if (!rx_ready)
     {
         return;
     }
-
-    local[0] = cmd[0];
-    local[1] = cmd[1];
-    local[2] = cmd[2];
-    cmd_ready = 0;
+    memcpy(local, rx_str, RX_STR_MAX);
+    rx_len = 0;
+    rx_ready = 0;
     HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-
-    if (local[0] != RX_UART_HEAD || local[2] != RX_UART_TAIL)
-    {
-        return;
-    }
-
-    switch (local[1])
-    {
-        case RX_UART_OPEN_DSG:
-            Only_Open_DSG();
-            break;
-        case RX_UART_CLOSE_DSG:
-            Only_Close_DSG();
-            break;
-        case RX_UART_OPEN_CHG:
-            Only_Open_CHG();
-            break;
-        case RX_UART_CLOSE_CHG:
-            Only_Close_CHG();
-            break;
-        default:
-            break;
-    }
+    OnUartLine(local);
 }
+
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     tx_busy = 0; /* 发送完毕 */
 }
 
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//    if (huart->Instance != USART1)
+//    {
+//        return;
+//    }
+
+//    if (cmd_index == 0)
+//    {
+//        if (rx_byte == RX_UART_HEAD)
+//        {
+//            cmd[cmd_index++] = rx_byte;
+//        }
+//    }
+//    else
+//    {
+//        cmd[cmd_index++] = rx_byte;
+//        if (cmd_index == RX_UART_LEN)
+//        {
+//            cmd_index = 0;
+//            if (cmd[2] == RX_UART_TAIL)
+//            {
+//                cmd_ready = 1;
+//            }
+//        }
+//    }
+
+//    if (!cmd_ready)
+//    {
+//        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
+//    }
+//}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    uint8_t byte;
+
     if (huart->Instance != USART1)
     {
         return;
     }
 
-    if (cmd_index == 0)
+    byte = rx_byte;
+    if (byte == '\r')
     {
-        if (rx_byte == RX_UART_HEAD)
+    }
+    else if (byte == '\n')
+    {
+        if (rx_discard || rx_len == 0U)
         {
-            cmd[cmd_index++] = rx_byte;
+            rx_len = 0;
+            rx_discard = 0;
         }
+        else
+        {
+            rx_str[rx_len] = '\0';
+            rx_ready = 1;
+        }
+    }
+    else if (rx_discard || (rx_len + 1U >= RX_STR_MAX))
+    {
+        rx_len = 0;
+        rx_discard = 1;
     }
     else
     {
-        cmd[cmd_index++] = rx_byte;
-        if (cmd_index == RX_UART_LEN)
-        {
-            cmd_index = 0;
-            if (cmd[2] == RX_UART_TAIL)
-            {
-                cmd_ready = 1;
-            }
-        }
+        rx_str[rx_len++] = byte;
     }
 
-    if (!cmd_ready)
+    if (!rx_ready)
     {
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
     }
 }
+
+//void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+//{
+//    if (huart->Instance != USART1)
+//    {
+//        return;
+//    }
+
+//    tx_busy = 0;
+//    cmd_index = 0;
+//    if (!cmd_ready)
+//    {
+//        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
+//    }
+//}
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
@@ -224,10 +337,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     {
         return;
     }
-
     tx_busy = 0;
-    cmd_index = 0;
-    if (!cmd_ready)
+    rx_len = 0;
+    rx_discard = 0;
+    if (!rx_ready)
     {
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
     }
@@ -541,7 +654,7 @@ static void Task_1000ms(void)
     Temp_SamplePush();
     if (tx_busy == 0)
     {
-        USART1_SendShang(shang);
+        USART1_SendTxStr();
     }
 }
 
