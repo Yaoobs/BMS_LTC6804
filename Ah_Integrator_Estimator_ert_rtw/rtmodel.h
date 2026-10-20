@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Ah_Integrator_Estimator'.
  *
- * Model version                  : 1.43
+ * Model version                  : 1.49
  * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Sun Oct 18 12:13:36 2026
+ * C/C++ source code generated on : Tue Oct 20 10:15:13 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M

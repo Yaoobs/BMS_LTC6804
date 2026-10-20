@@ -60,11 +60,11 @@ static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
 #define RX_UART_CLOSE_CHG  0x07U
 
 static uint8_t rx_byte;
-uint8_t tx_data[50];
+uint8_t tx_data[100];
 uint16_t total_voltage;
 uint16_t cell_voltage[12];
 uint16_t Max, Min;
-uint8_t InitialSOC;
+uint16_t InitialSOC;
 
 static uint32_t adcv_tick;
 static uint8_t adcv_wait;
@@ -108,11 +108,19 @@ void USART1_SendTxStr(void)
     chg = (HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
 	dsg = (HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
 
-    len = sprintf((char *)tx_data, "当前SOC: %u%%\r\n", (unsigned)SOC);
+    len = sprintf((char *)tx_data, "当前SOC: %u.%02u%%\r\n",
+              (unsigned)(SOC / 100U), (unsigned)(SOC % 100U));
     if (len <= 0 || len >= (int)sizeof(tx_data))
     {
         return;
     }
+	
+	len += sprintf((char *)tx_data + len, "电流: %+d\r\n", (int)Current);
+	if (len <= 0 || len >= (int)sizeof(tx_data))
+	{
+    return;
+	}
+
 
     len += sprintf((char *)tx_data + len, "充电MOS: %s\r\n", chg);
     if (len <= 0 || len >= (int)sizeof(tx_data))
@@ -130,31 +138,31 @@ void USART1_SendTxStr(void)
     USART1_SendData(tx_data, (uint16_t)len);
 }
 
-void USART1_SendTxData() 
-{
-	uint8_t vi;
-	tx_data[0] = TX_UART_HEAD_0;
-    tx_data[1] = TX_UART_HEAD_1;
-    for (vi = 0; vi < 12; vi++)
-    {
-        tx_data[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
-        tx_data[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
-    }
-    tx_data[32] = (uint8_t)(total_voltage >> 8);
-    tx_data[33] = (uint8_t)(total_voltage & 0xFF);
-    tx_data[34] = (uint8_t)(SOC >> 8);
-    tx_data[35] = (uint8_t)(SOC & 0xFF);
-    tx_data[36] = (uint8_t)(((uint16_t)Current) >> 8);
-    tx_data[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
-    tx_data[38] = temp;
-    tx_data[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
-    tx_data[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
-    tx_data[41] = (uint8_t)(Max >> 8);
-    tx_data[42] = (uint8_t)(Max & 0x00FF);
-    tx_data[43] = (uint8_t)(Min >> 8);
-    tx_data[44] = (uint8_t)(Min & 0x00FF);
-	USART1_SendData(tx_data, TX_FRAME_LEN);
-}
+//void USART1_SendTxData() 
+//{
+//	uint8_t vi;
+//	tx_data[0] = TX_UART_HEAD_0;
+//    tx_data[1] = TX_UART_HEAD_1;
+//    for (vi = 0; vi < 12; vi++)
+//    {
+//        tx_data[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
+//        tx_data[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
+//    }
+//    tx_data[32] = (uint8_t)(total_voltage >> 8);
+//    tx_data[33] = (uint8_t)(total_voltage & 0xFF);
+//    tx_data[34] = (uint8_t)(SOC >> 8);
+//    tx_data[35] = (uint8_t)(SOC & 0xFF);
+//    tx_data[36] = (uint8_t)(((uint16_t)Current) >> 8);
+//    tx_data[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
+//    tx_data[38] = temp;
+//    tx_data[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
+//    tx_data[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
+//    tx_data[41] = (uint8_t)(Max >> 8);
+//    tx_data[42] = (uint8_t)(Max & 0x00FF);
+//    tx_data[43] = (uint8_t)(Min >> 8);
+//    tx_data[44] = (uint8_t)(Min & 0x00FF);
+//	USART1_SendData(tx_data, TX_FRAME_LEN);
+//}
 
 void Only_Open_CHG(void)
 {
@@ -363,88 +371,104 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     }
 }
 
-void Get_SOC(void)
+uint16_t Get_SOC(void)
 {
     if (total_voltage > (4100 * 9))
     {
-        SOC = 100;
+        return 100;
     }
     else if ((total_voltage > (4100 * 9)) && (total_voltage < (4150 * 9)))
     {
-        SOC = 95;
+        return 95;
     }
     else if ((total_voltage > (4050 * 9)) && (total_voltage < (4100 * 9)))
     {
-        SOC = 90;
+        return 90;
     }
     else if ((total_voltage > (4000 * 9)) && (total_voltage < (4050 * 9)))
     {
-        SOC = 88;
+        return 88;
     }
     else if ((total_voltage > (3950 * 9)) && (total_voltage < (4000 * 9)))
     {
-        SOC = 87;
+        return 87;
     }
     else if ((total_voltage > (3900 * 9)) && (total_voltage < (3950 * 9)))
     {
-        SOC = 86;
+        return 86;
     }
     else if ((total_voltage > (3900 * 9)) && (total_voltage < (3950 * 9)))
     {
-        SOC = 85;
+        return 85;
     }
     else if ((total_voltage > (3850 * 9)) && (total_voltage < (3900 * 9)))
     {
-        SOC = 84;
+        return 84;
     }
     else if ((total_voltage > (3800 * 9)) && (total_voltage < (3850 * 9)))
     {
-        SOC = 83;
+        return 83;
     }
     else if ((total_voltage > (3750 * 9)) && (total_voltage < (3800 * 9)))
     {
-        SOC = 82;
+        return 82;
     }
     else if ((total_voltage > (3700 * 9)) && (total_voltage < (3750 * 9)))
     {
-        SOC = 81;
+        return 81;
     }
     else if ((total_voltage > (3650 * 9)) && (total_voltage < (3700 * 9)))
     {
-        SOC = 80;
+        return 80;
     }
     else if ((total_voltage > (3600 * 9)) && (total_voltage < (3650 * 9)))
     {
-        SOC = 79;
+        return 79;
     }
     else if ((total_voltage > (3550 * 9)) && (total_voltage < (3600 * 9)))
     {
-        SOC = 78;
+        return 78;
     }
     else if ((total_voltage > (3500 * 9)) && (total_voltage < (3550 * 9)))
     {
-        SOC = 77;
+        return 77;
     }
     else if ((total_voltage > (3450 * 9)) && (total_voltage < (3500 * 9)))
     {
-        SOC = 40;
+        return 40;
     }
     else if ((total_voltage > (3400 * 9)) && (total_voltage < (3450 * 9)))
     {
-        SOC = 30;
+        return 30;
     }
     else if ((total_voltage > (3300 * 9)) && (total_voltage < (3400 * 9)))
     {
-        SOC = 20;
+        return 20;
     }
     else if ((total_voltage > (3200 * 9)) && (total_voltage < (3300 * 9)))
     {
-        SOC = 10;
+        return 10;
     }
     else if ((total_voltage > (3100 * 9)) && (total_voltage < (3200 * 9)))
     {
-        SOC = 5;
+        return 5;
     }
+	return 0;
+}
+
+void SOC_Estimator() 
+{
+	if(BMS_State == BMS_Standby)
+	{
+		SOC = Get_SOC() * 100;
+		InitialSOC = SOC;
+		Ah_Integrator_Estimator_initialize();//待机时需要把积分器清零
+	}
+	else 	
+	{
+		Ah_Integrator_Estimator_step();
+	}
+	
 }
 
 void Get_TotalVoltage(void)
@@ -545,7 +569,7 @@ void Voltage_Poll(void)
     adcv_wait = 0;
     LTC6804_rdcv(cell_codes);
     Get_TotalVoltage();
-    Get_SOC();
+    
     Get_Cell_Voltage_Max_Min();
     Judge_CHG_DSG();
 }
@@ -558,7 +582,7 @@ void Os_Init(void)
     HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
 //    Only_Open_CHG();                     /* 打开充电MOS管 */
 //    Only_Open_DSG();                     /* 打开放电MOS管 */
-//	InitialSOC = 78;
+
 
 }
 
@@ -677,11 +701,13 @@ static void Task_50ms(void)
 static void Task_100ms(void)
 {
 	Current_CalcFromAverage();
-//	Ah_Integrator_Estimator_step();
+
     /* 10 ms 任务里只发命令 */
     LTC6804_adcv();
     adcv_tick = HAL_GetTick();
     adcv_wait = 1;
+	SOC_Estimator();
+	
 }
 
 static void Task_1000ms(void)

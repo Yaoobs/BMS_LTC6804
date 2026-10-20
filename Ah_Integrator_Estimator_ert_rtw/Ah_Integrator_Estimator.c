@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Ah_Integrator_Estimator'.
  *
- * Model version                  : 1.43
+ * Model version                  : 1.49
  * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Sun Oct 18 12:13:36 2026
+ * C/C++ source code generated on : Tue Oct 20 10:15:13 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -65,7 +65,7 @@ preprocessor word size checks.
 #endif
 
 /* Exported block signals */
-uint8_T SOC;                           /* '<S1>/single->uint8' */
+uint16_T SOC;                          /* '<S1>/single->uint8' */
 
 /* Exported block parameters */
 uint16_T Q_rated = 1200U;              /* Variable: Q_rated
@@ -92,26 +92,26 @@ void Ah_Integrator_Estimator_step(void)
    *  Constant: '<S1>/总容量参数-mA'
    *  DiscreteIntegrator: '<S1>/Discrete-Time Integrator'
    *  Gain: '<S1>/mAh->mAs'
-   *  Gain: '<S1>/小数转百分比'
-   *  Gain: '<S1>/百分比转小数'
+   *  Gain: '<S1>/万分比转小数'
+   *  Gain: '<S1>/小数转万分比'
    *  Inport: '<Root>/InitialSOC'
    *  Product: '<S1>/容量除法器'
    *  Sum: '<S1>/SOC加法器'
    */
   tmp = roundf((Ah_Integrator_Estimator_DW.DiscreteTimeIntegrator_DSTATE /
-                (3600.0F * (real32_T)Q_rated) + 0.0100097656F * (real32_T)
-                InitialSOC) * 100.0F);
-  if (tmp < 256.0F) {
+                (3600.0F * (real32_T)Q_rated) + 9.99998301E-5F * (real32_T)
+                InitialSOC) * 10000.0F);
+  if (tmp < 65536.0F) {
     if (tmp >= 0.0F) {
       /* DataTypeConversion: '<S1>/single->uint8' */
-      SOC = (uint8_T)tmp;
+      SOC = (uint16_T)tmp;
     } else {
       /* DataTypeConversion: '<S1>/single->uint8' */
       SOC = 0U;
     }
   } else {
     /* DataTypeConversion: '<S1>/single->uint8' */
-    SOC = MAX_uint8_T;
+    SOC = MAX_uint16_T;
   }
 
   /* End of DataTypeConversion: '<S1>/single->uint8' */
@@ -122,13 +122,13 @@ void Ah_Integrator_Estimator_step(void)
    *  Product: '<S1>/Product'
    */
   Ah_Integrator_Estimator_DW.DiscreteTimeIntegrator_DSTATE += (real32_T)
-    (eta_coulomb * Current) * 0.01F;
+    (eta_coulomb * Current) * 0.1F;
 }
 
 /* Model initialize function */
 void Ah_Integrator_Estimator_initialize(void)
 {
-  /* (no initialization code required) */
+  Ah_Integrator_Estimator_DW.DiscreteTimeIntegrator_DSTATE = 0;
 }
 
 /*

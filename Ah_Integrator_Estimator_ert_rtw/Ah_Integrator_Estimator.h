@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Ah_Integrator_Estimator'.
  *
- * Model version                  : 1.43
+ * Model version                  : 1.49
  * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Sun Oct 18 12:13:36 2026
+ * C/C++ source code generated on : Tue Oct 20 10:15:13 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -43,7 +43,7 @@ struct tag_RTM_Ah_Integrator_Estimat_T {
 };
 
 /* Imported (extern) block signals */
-extern uint8_T InitialSOC;             /* '<Root>/InitialSOC' */
+extern uint16_T InitialSOC;            /* '<Root>/InitialSOC' */
 extern int16_T Current;                /* '<Root>/Current' */
 
 /* Block states (default storage) */
@@ -57,7 +57,7 @@ extern DW_Ah_Integrator_Estimator_T Ah_Integrator_Estimator_DW;
  * these signals and export their symbols.
  *
  */
-extern uint8_T SOC;                    /* '<S1>/single->uint8' */
+extern uint16_T SOC;                   /* '<S1>/single->uint8' */
 
 /*
  * Exported Global Parameters

@@ -59,11 +59,11 @@ void Current_CalcFromAverage(void)
     adc = (sum + (int)current_mv_count / 2) / (int)current_mv_count;
     if (adc > (CURRENT_ADC_BASE_MV + 2))
     {
-        Current = (adc - CURRENT_ADC_BASE_MV) * 50;
+        Current = -(adc - CURRENT_ADC_BASE_MV) * 50;
     }
     else if (adc < (CURRENT_ADC_BASE_MV - 2))
     {
-        Current = -(CURRENT_ADC_BASE_MV - adc) * 50;
+        Current = (CURRENT_ADC_BASE_MV - adc) * 50;
     }
     else
     {
