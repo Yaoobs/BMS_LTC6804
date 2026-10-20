@@ -46,3 +46,5 @@ bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\Ah_Integrator_Estimator.h
 bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\rtwtypes.h
 bms_ltc6804\os.o: ..\state_machine_ert_rtw\state_machine.h
 bms_ltc6804\os.o: ..\state_machine_ert_rtw\rtwtypes.h
+bms_ltc6804\os.o: ..\protect_ert_rtw\protect.h
+bms_ltc6804\os.o: ..\protect_ert_rtw\rtwtypes.h

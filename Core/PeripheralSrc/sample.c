@@ -4,7 +4,7 @@ int16_t Current;
 uint8_t temp;
 
 #define CURRENT_AVG_LEN      100
-#define CURRENT_ADC_BASE_MV  1368
+#define CURRENT_ADC_BASE_MV  1367
 
 uint16_t current_mv_buf[CURRENT_AVG_LEN];
 uint8_t current_mv_pos;

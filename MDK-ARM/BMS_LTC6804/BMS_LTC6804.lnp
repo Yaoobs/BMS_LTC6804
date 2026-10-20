@@ -30,6 +30,7 @@
 "bms_ltc6804\ltc6804.o"
 "bms_ltc6804\ah_integrator_estimator.o"
 "bms_ltc6804\state_machine.o"
+"bms_ltc6804\protect.o"
 --strict --scatter "BMS_LTC6804\BMS_LTC6804.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
