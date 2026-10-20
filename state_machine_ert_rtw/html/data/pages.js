@@ -1,0 +1,1 @@
+var reportPages = [["摘要","state_machine_survey.html"],["子系统报告","state_machine_subsystems.html"],["代码接口报告","state_machine_interface.html"],["可追溯性报告","state_machine_trace.html"],["静态代码度量报告","state_machine_metrics.html"],["代码替换报告","state_machine_replacements.html"],["代码生成器假设","state_machine_coderassumptions.html"]];

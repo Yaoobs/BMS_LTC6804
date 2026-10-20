@@ -16,6 +16,7 @@
 #include "sample.h"
 #include "LTC6804.h"
 #include "Ah_Integrator_Estimator.h"
+#include "state_machine.h"
 
 uint16_t TaskCount;                  /* For task period count */
 uint8_t Period_5ms_Count;            /* 5ms task period count */
@@ -102,8 +103,10 @@ void USART1_SendTxStr(void)
 {
     int len;
     const char *chg;
+	const char *dsg;
 
     chg = (HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
+	dsg = (HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
 
     len = sprintf((char *)tx_data, "当前SOC: %u%%\r\n", (unsigned)SOC);
     if (len <= 0 || len >= (int)sizeof(tx_data))
@@ -116,6 +119,13 @@ void USART1_SendTxStr(void)
     {
         return;
     }
+	
+	len += sprintf((char *)tx_data + len, "放电MOS: %s\r\n", dsg);
+    if (len <= 0 || len >= (int)sizeof(tx_data))
+    {
+        return;
+    }
+
 
     USART1_SendData(tx_data, (uint16_t)len);
 }
@@ -214,10 +224,17 @@ void Only_Close_DSG(void)
 void OnUartLine(const char *line)
 {
     /* 在这里处理 line，它不含 \r、\n，末尾已有 \0 */
-	if(strcmp(line, "放电") == 0)
+	if(strcmp(line, "D") == 0)
 	{
-		Only_Close_CHG();
-		Only_Open_DSG();
+		StateRequest = Driving;
+	} 
+	else if(strcmp(line, "C") == 0)
+	{
+		StateRequest = Charging;
+	} 
+	else if(strcmp(line, "S") == 0) 
+	{
+		StateRequest = Standby;
 	}
 }
 
@@ -496,6 +513,23 @@ void Judge_CHG_DSG(void)
     }
 }
 
+void JudgeBMSState()
+{
+	if(BMS_State == BMS_Standby) {
+		Only_Close_DSG();
+		Only_Close_CHG();
+	}
+	else if(BMS_State == BMS_Driving)
+	{
+		Only_Close_CHG();
+		Only_Open_DSG();
+	}
+	else if(BMS_State == BMS_Charging)
+	{
+		Only_Close_DSG();
+		Only_Open_CHG();
+	}
+}
 /* Os_Task() 里每次都调用，不要写在 while 里空等 */
 void Voltage_Poll(void)
 {
@@ -522,9 +556,9 @@ void Os_Init(void)
     HAL_ADCEx_Calibration_Start(&hadc1); /* 校准 ADC */
 	LTC6804_initialize();                /* LTC6804初始化配置 */
     HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
-    Only_Open_CHG();                     /* 打开充电MOS管 */
-    Only_Open_DSG();                     /* 打开放电MOS管 */
-	InitialSOC = 78;
+//    Only_Open_CHG();                     /* 打开充电MOS管 */
+//    Only_Open_DSG();                     /* 打开放电MOS管 */
+//	InitialSOC = 78;
 
 }
 
@@ -580,6 +614,8 @@ void Os_Task(void)
     HAL_IWDG_Refresh(&hiwdg);
     RECEICE_DATA_DEAL();
     Voltage_Poll();
+	state_machine_step();
+	JudgeBMSState();
 
     if (Period_1ms_Expire_Flag)
     {
