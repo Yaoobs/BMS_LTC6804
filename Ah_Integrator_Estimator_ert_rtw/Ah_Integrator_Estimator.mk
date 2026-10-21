@@ -2,7 +2,7 @@
 ## Makefile generated for component 'Ah_Integrator_Estimator'. 
 ## 
 ## Makefile     : Ah_Integrator_Estimator.mk
-## Generated on : Sun Oct 18 12:13:39 2026
+## Generated on : Wed Oct 21 09:56:32 2026
 ## Final product: $(RELATIVE_PATH_TO_ANCHOR)\Ah_Integrator_Estimator.exe
 ## Product type : executable
 ## 
@@ -20,8 +20,8 @@
 
 PRODUCT_NAME              = Ah_Integrator_Estimator
 MAKEFILE                  = Ah_Integrator_Estimator.mk
-MATLAB_ROOT               = C:\PROGRA~1\MATLAB\R2023b
-MATLAB_BIN                = C:\PROGRA~1\MATLAB\R2023b\bin
+MATLAB_ROOT               = C:\PROGRA~1\MATLAB\R2025b
+MATLAB_BIN                = C:\PROGRA~1\MATLAB\R2025b\bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)\win64
 START_DIR                 = D:\BaiduNetdiskDownload\matlab\bms\SOC
 SOLVER                    = 
@@ -42,13 +42,15 @@ NODEBUG                   = 1
 
 # Toolchain Name:          Microsoft Visual C++ 2022 v17.0 | nmake (64-bit Windows)
 # Supported Version(s):    17.0
-# ToolchainInfo Version:   2023b
+# ToolchainInfo Version:   2025b
 # Specification Revision:  1.0
 # 
 #-------------------------------------------
 # Macros assumed to be defined elsewhere
 #-------------------------------------------
 
+# C_STANDARD_OPTS
+# CPP_STANDARD_OPTS
 # NODEBUG
 # cvarsdll
 # cvarsmt
@@ -132,9 +134,9 @@ RUN                 = @cmd /C
 #----------------------------------------
 
 ARFLAGS              = /nologo
-CFLAGS               = $(cflags) $(CVARSFLAG) $(CFLAGS_ADDITIONAL) \
+CFLAGS               = $(cflags) $(CVARSFLAG) $(CFLAGS_ADDITIONAL) $(C_STANDARD_OPTS) \
                        /Od /Oy-
-CPPFLAGS             = /TP $(cflags) $(CVARSFLAG) $(CPPFLAGS_ADDITIONAL) \
+CPPFLAGS             = /TP $(cflags) $(CVARSFLAG) $(CPPFLAGS_ADDITIONAL) $(CPP_STANDARD_OPTS) \
                        /Od /Oy-
 CPP_LDFLAGS          = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN)
 CPP_SHAREDLIB_LDFLAGS  = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN) \
@@ -302,115 +304,115 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS) $(MAIN_OBJ)
 # SOURCE-TO-OBJECT
 #---------------------
 
-.c.obj :
+.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-.cpp.obj :
+.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-.cc.obj :
+.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-.cxx.obj :
+.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.c.obj :
+{$(RELATIVE_PATH_TO_ANCHOR)}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.cpp.obj :
+{$(RELATIVE_PATH_TO_ANCHOR)}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.cc.obj :
+{$(RELATIVE_PATH_TO_ANCHOR)}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.cxx.obj :
+{$(RELATIVE_PATH_TO_ANCHOR)}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)}.c.obj :
+{$(START_DIR)}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)}.cpp.obj :
+{$(START_DIR)}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)}.cc.obj :
+{$(START_DIR)}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)}.cxx.obj :
+{$(START_DIR)}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.c.obj :
+{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cpp.obj :
+{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cc.obj :
+{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cxx.obj :
+{$(START_DIR)\Ah_Integrator_Estimator_ert_rtw}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\rtw\c\src}.c.obj :
+{$(MATLAB_ROOT)\rtw\c\src}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\rtw\c\src}.cpp.obj :
+{$(MATLAB_ROOT)\rtw\c\src}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\rtw\c\src}.cc.obj :
+{$(MATLAB_ROOT)\rtw\c\src}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\rtw\c\src}.cxx.obj :
+{$(MATLAB_ROOT)\rtw\c\src}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\simulink\src}.c.obj :
+{$(MATLAB_ROOT)\simulink\src}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\simulink\src}.cpp.obj :
+{$(MATLAB_ROOT)\simulink\src}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\simulink\src}.cc.obj :
+{$(MATLAB_ROOT)\simulink\src}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\simulink\src}.cxx.obj :
+{$(MATLAB_ROOT)\simulink\src}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.c.obj :
+{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.c.obj:
 	$(CC) $(CFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cpp.obj :
+{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cpp.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cc.obj :
+{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cc.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 
-{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cxx.obj :
+{$(MATLAB_ROOT)\toolbox\simulink\blocks\src}.cxx.obj:
 	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
 
 

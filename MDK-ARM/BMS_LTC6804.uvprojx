@@ -995,6 +995,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\PeripheralSrc\LTC6804.c</FilePath>
             </File>
+            <File>
+              <FileName>usart1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\PeripheralSrc\usart1.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

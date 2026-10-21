@@ -4,8 +4,8 @@
  * Code generated for Simulink model 'Ah_Integrator_Estimator'.
  *
  * Model version                  : 1.49
- * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Tue Oct 20 10:15:13 2026
+ * Simulink Coder version         : 25.2 (R2025b) 28-Jul-2025
+ * C/C++ source code generated on : Wed Oct 21 09:56:22 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -68,11 +68,11 @@ preprocessor word size checks.
 uint16_T SOC;                          /* '<S1>/single->uint8' */
 
 /* Exported block parameters */
+real32_T eta_coulomb = 0.99F;          /* Variable: eta_coulomb
+                                        * Referenced by: '<S1>/库伦效率系数'
+                                        */
 uint16_T Q_rated = 1200U;              /* Variable: Q_rated
                                         * Referenced by: '<S1>/总容量参数-mA'
-                                        */
-uint8_T eta_coulomb = 1U;              /* Variable: eta_coulomb
-                                        * Referenced by: '<S1>/库伦效率系数'
                                         */
 
 /* Block states (default storage) */
@@ -118,11 +118,12 @@ void Ah_Integrator_Estimator_step(void)
 
   /* Update for DiscreteIntegrator: '<S1>/Discrete-Time Integrator' incorporates:
    *  Constant: '<S1>/库伦效率系数'
+   *  DataTypeConversion: '<S1>/int16->single'
    *  Inport: '<Root>/Current'
    *  Product: '<S1>/Product'
    */
-  Ah_Integrator_Estimator_DW.DiscreteTimeIntegrator_DSTATE += (real32_T)
-    (eta_coulomb * Current) * 0.1F;
+  Ah_Integrator_Estimator_DW.DiscreteTimeIntegrator_DSTATE += eta_coulomb *
+    (real32_T)Current * 0.1F;
 }
 
 /* Model initialize function */

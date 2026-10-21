@@ -4,8 +4,8 @@
  * Code generated for Simulink model 'Ah_Integrator_Estimator'.
  *
  * Model version                  : 1.49
- * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Tue Oct 20 10:15:13 2026
+ * Simulink Coder version         : 25.2 (R2025b) 28-Jul-2025
+ * C/C++ source code generated on : Wed Oct 21 09:56:22 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -13,8 +13,8 @@
  * Validation result: Not run
  */
 
-#ifndef RTW_HEADER_Ah_Integrator_Estimator_h_
-#define RTW_HEADER_Ah_Integrator_Estimator_h_
+#ifndef Ah_Integrator_Estimator_h_
+#define Ah_Integrator_Estimator_h_
 #ifndef Ah_Integrator_Estimator_COMMON_INCLUDES_
 #define Ah_Integrator_Estimator_COMMON_INCLUDES_
 #include "rtwtypes.h"
@@ -67,11 +67,11 @@ extern uint16_T SOC;                   /* '<S1>/single->uint8' */
  * these parameters and exports their symbols.
  *
  */
+extern real32_T eta_coulomb;           /* Variable: eta_coulomb
+                                        * Referenced by: '<S1>/库伦效率系数'
+                                        */
 extern uint16_T Q_rated;               /* Variable: Q_rated
                                         * Referenced by: '<S1>/总容量参数-mA'
-                                        */
-extern uint8_T eta_coulomb;            /* Variable: eta_coulomb
-                                        * Referenced by: '<S1>/库伦效率系数'
                                         */
 
 /* Model entry point functions */
@@ -98,7 +98,7 @@ extern RT_MODEL_Ah_Integrator_Estima_T *const Ah_Integrator_Estimator_M;
  * '<Root>' : 'Ah_Integrator_Estimator'
  * '<S1>'   : 'Ah_Integrator_Estimator/Ah_Integrator_Estimator'
  */
-#endif                               /* RTW_HEADER_Ah_Integrator_Estimator_h_ */
+#endif                                 /* Ah_Integrator_Estimator_h_ */
 
 /*
  * File trailer for generated code.

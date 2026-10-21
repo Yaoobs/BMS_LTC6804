@@ -36,7 +36,3 @@ bms_ltc6804\main.o: ../Core/Inc/spi.h
 bms_ltc6804\main.o: ../Core/Inc/usart.h
 bms_ltc6804\main.o: ../Core/Inc/gpio.h
 bms_ltc6804\main.o: ../Core/PeripheralInc/os.h
-bms_ltc6804\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-bms_ltc6804\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
-bms_ltc6804\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
-bms_ltc6804\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h

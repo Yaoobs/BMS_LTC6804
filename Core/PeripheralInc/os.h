@@ -1,15 +1,6 @@
 #ifndef __OS_H
 #define __OS_H
 
-#include "stm32f1xx_hal.h"
-#include <string.h> 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-
 #define true 1
 #define false 0 
 

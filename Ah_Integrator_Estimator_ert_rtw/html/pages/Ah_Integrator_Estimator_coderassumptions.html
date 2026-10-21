@@ -11,7 +11,7 @@
 </h1>
 <div>
 <p>
-您可以检查的假设列表和所选目标环境的预期结果。有关详细信息，请参阅<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'legacyMCall', expr:'helpview(fullfile(docroot,\'toolbox\',\'ecoder\',\'helptargets.map\'),\'verif_of_code_generation_assumptions\')'})" >代码生成假设的验证</a>。
+您可以检查的代码生成假设以及选定目标环境的预期结果。<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'legacyMCall', expr:'helpview(\'ecoder\',\'verification_of_code_gen_assumptions\')'})" >相关文档</a>。
 </p>
 </div>
 <div id="table_of_contents">
@@ -153,7 +153,7 @@ C 语言标准
 <tr>
 <td align="left" valign="top">
 <p>
-零初始化代码已针对模型 'Ah_Integrator_Estimator' 进行优化。
+针对模型 'Ah_Integrator_Estimator' 优化的零初始化代码。
 </p>
 <p>
 <table class="AltRow" cellspacing="0">
@@ -180,7 +180,7 @@ True
 
 </p>
 <p>
-如果假设不正确，请使用<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'legacyMCall', expr:'rtw.report.CoderAssumptions.showMemZeroInitParams(\'Ah_Integrator_Estimator\')'})" >配置参数 > 代码生成 > 优化</a>设置删除优化。或者，配置目标环境以保持假设。
+如果代码生成器假设不正确，请禁用对应的模型配置优化参数或更改目标环境配置以符合假设。
 </p>
 
 </td>
@@ -222,7 +222,7 @@ False
 
 </p>
 <p>
-如果假设不正确，次正规数可能导致模型和生成的代码仿真结果不匹配。有关详细信息，请参阅<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'legacyMCall', expr:'helpview(fullfile(docroot,\'toolbox\',\'ecoder\',\'helptargets.map\'),\'subnormal_numbers_performance\')'})" >次正规数性能</a>。
+如果代码生成器假设不正确，次正规数可能导致模型和生成的代码仿真结果不匹配。
 </p>
 
 </td>
