@@ -11,7 +11,6 @@
 extern void USART1_SendTxStr(void);
 extern void RECEICE_DATA_DEAL(void);
 
-extern uint8_t rx_byte;
-extern volatile uint8_t tx_busy;;
+extern void USART1_Init(void);
 
 #endif

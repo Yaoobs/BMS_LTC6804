@@ -1,6 +1,8 @@
 #ifndef __OS_H
 #define __OS_H
 
+#include "main.h"
+
 #define true 1
 #define false 0 
 
@@ -14,6 +16,7 @@ extern void Os_Init(void);
 extern void Os_Period(void);
 extern void Os_Task(void);
 extern void ShowInformation(void);
+extern uint16_t total_voltage;
 enum os_period
 {
 	OS_0MS = 0u,

@@ -1,23 +1,23 @@
 #include "usart1.h"
+#include "os.h"
 
+//#define TX_UART_HEAD_0  0xAAU
+//#define TX_UART_HEAD_1  0x01U
+static volatile uint8_t tx_busy;
 
-#define TX_UART_HEAD_0  0xAAU
-#define TX_UART_HEAD_1  0x01U
-volatile uint8_t tx_busy;
+//static uint8_t cmd[3];
+//static uint8_t cmd_index;
+//static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
 
-static uint8_t cmd[3];
-static uint8_t cmd_index;
-static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
+//#define RX_UART_LEN        3U
+//#define RX_UART_HEAD       0x01U
+//#define RX_UART_TAIL       0x55U
+//#define RX_UART_OPEN_DSG   0x04U
+//#define RX_UART_CLOSE_DSG  0x05U
+//#define RX_UART_OPEN_CHG   0x06U
+//#define RX_UART_CLOSE_CHG  0x07U
 
-#define RX_UART_LEN        3U
-#define RX_UART_HEAD       0x01U
-#define RX_UART_TAIL       0x55U
-#define RX_UART_OPEN_DSG   0x04U
-#define RX_UART_CLOSE_DSG  0x05U
-#define RX_UART_OPEN_CHG   0x06U
-#define RX_UART_CLOSE_CHG  0x07U
-
-uint8_t rx_byte;
+static uint8_t rx_byte;
 uint8_t tx_data[100];
 
 #define TX_FRAME_LEN 50U
@@ -27,7 +27,10 @@ static uint8_t rx_str[RX_STR_MAX];
 static uint8_t rx_len;
 static uint8_t rx_discard;
 static volatile uint8_t rx_ready;
-
+void USART1_Init()
+{
+	HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
+}
 void USART1_SendData(const uint8_t *frame, uint16_t len)
 {
     if (frame == NULL || len == 0)
@@ -44,6 +47,10 @@ void USART1_SendData(const uint8_t *frame, uint16_t len)
 
 void USART1_SendTxStr(void)
 {
+	 if (tx_busy != 0)
+    {
+		return;
+	}
     int len;
     const char *chg;
 	const char *dsg;
@@ -51,7 +58,7 @@ void USART1_SendTxStr(void)
     chg = (HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
 	dsg = (HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin) == GPIO_PIN_SET) ? "ON" : "OFF";
 
-    len = sprintf((char *)tx_data, "当前SOC: %u.%02u%%\r\n",
+    len = sprintf((char *)tx_data, "\r\n\r\n当前SOC: %u.%02u%%\r\n",
               (unsigned)(SOC / 100U), (unsigned)(SOC % 100U));
     if (len <= 0 || len >= (int)sizeof(tx_data))
     {
@@ -62,6 +69,12 @@ void USART1_SendTxStr(void)
 	if (len <= 0 || len >= (int)sizeof(tx_data))
 	{
     return;
+	}
+	
+	len += sprintf((char *)tx_data + len, "总电压: %u mV\r\n", (unsigned)total_voltage);
+	if (len <= 0 || len >= (int)sizeof(tx_data))
+	{
+		return;
 	}
 
 

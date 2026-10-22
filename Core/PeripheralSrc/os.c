@@ -14,6 +14,7 @@
 #include "LTC6804.h"
 #include "protect.h"
 #include "usart1.h"
+#include "switch.h"
 
 uint16_t TaskCount;                  /* For task period count */
 uint8_t Period_5ms_Count;            /* 5ms task period count */
@@ -41,7 +42,7 @@ static void SetModelOutput(void);
 /* 业务 */
 uint16_t total_voltage;
 uint16_t cell_voltage[12];
-//uint16_t Max, Min;
+
 uint16_t InitialSOC;
 
 static uint32_t adcv_tick;
@@ -55,31 +56,6 @@ void LEDXToggle(void)
     HAL_GPIO_TogglePin(GPIOB, LED_Ctrl_Pin);
 }
 
-void Only_Open_CHG(void)
-{
-    HAL_GPIO_WritePin(GPIOB, CHG_POWER_EN_Pin, GPIO_PIN_SET);
-}
-
-void Only_Close_CHG(void)
-{
-    HAL_GPIO_WritePin(GPIOB, CHG_POWER_EN_Pin, GPIO_PIN_RESET);
-}
-
-void Only_Open_DSG(void)
-{
-    HAL_GPIO_WritePin(GPIOB, DSG_POWER_EN_Pin, GPIO_PIN_SET);
-}
-
-void Only_Close_DSG(void)
-{
-    HAL_GPIO_WritePin(GPIOB, DSG_POWER_EN_Pin, GPIO_PIN_RESET);
-}
-
- void Close_DSG_CHG(void)
-{
-    HAL_GPIO_WritePin(GPIOB, CHG_POWER_EN_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOB, DSG_POWER_EN_Pin, GPIO_PIN_RESET);
-}
 
 uint16_t Get_SOC(void)
 {
@@ -193,60 +169,6 @@ void Get_TotalVoltage(void)
     }
 }
 
-//void Get_Cell_Voltage_Max_Min(void)
-//{
-//    uint8_t i;
-
-//    /* 第6、11、12节未接，下标5、10、11不参与比较 */
-//    Max = cell_voltage[0];
-//    Min = cell_voltage[0];
-//    for (i = 0; i < 12; i++)
-//    {
-//        if (i == 5 || i == 10 || i == 11)
-//        {
-//            continue;
-//        }
-//        if (cell_voltage[i] > Max)
-//        {
-//            Max = cell_voltage[i];
-//        }
-//        if (cell_voltage[i] < Min)
-//        {
-//            Min = cell_voltage[i];
-//        }
-//    }
-//}
-
-//void Judge_CHG_DSG(void)
-//{
-	
-//    if (Max > 4200) /* 电池最大电压大于4200mv */
-//    {
-//        Only_Close_CHG(); /* 关闭充电MOS管 */
-//        OV_FLAG = 1;
-//    }
-//    if (OV_FLAG == 1) /* 过压状态 */
-//    {
-//        if (Max < 4100) /* 电池最大电压小于4100mv */
-//        {
-//            Only_Open_CHG(); /* 打开充电MOS管 */
-//            OV_FLAG = 0;
-//        }
-//    }
-//    if (Min < 2800) /* 电池最小电压低于4200mv */
-//    {
-//        Only_Close_DSG(); /* 关闭放电MOS管 */
-//        UV_FLAG = 1;
-//    }
-//    if (UV_FLAG == 1) /* 欠压状态 */
-//    {
-//        if (Min > 3000) /* 电池最小电压大于3000mv */
-//        {
-//            Only_Open_DSG(); /* 打开放电MOS管 */
-//            UV_FLAG = 0;
-//        }
-//    }
-//}
 
 void JudgeBMSState()
 {
@@ -295,7 +217,7 @@ void Os_Init(void)
 	HAL_Delay(5000); //初始化增加延时
     HAL_ADCEx_Calibration_Start(&hadc1); /* 校准 ADC */
 	LTC6804_initialize();                /* LTC6804初始化配置 */
-    HAL_UART_Receive_IT(&huart1, &rx_byte, 1); /* 打开 USART1 接收 */
+    USART1_Init();
 //    Only_Open_CHG();                     /* 打开充电MOS管 */
 //    Only_Open_DSG();                     /* 打开放电MOS管 */
 
@@ -433,10 +355,8 @@ static void Task_1000ms(void)
 {
     LEDXToggle();
     Temp_SamplePush();
-    if (tx_busy == 0)
-    {
-        USART1_SendTxStr();
-    }
+   
+    USART1_SendTxStr();
 }
 
 static void SetModelInput(void)

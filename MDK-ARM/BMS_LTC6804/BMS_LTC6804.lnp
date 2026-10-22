@@ -29,6 +29,7 @@
 "bms_ltc6804\sample.o"
 "bms_ltc6804\ltc6804.o"
 "bms_ltc6804\usart1.o"
+"bms_ltc6804\switch.o"
 "bms_ltc6804\ah_integrator_estimator.o"
 "bms_ltc6804\state_machine.o"
 "bms_ltc6804\protect.o"

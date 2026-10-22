@@ -1000,6 +1000,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\PeripheralSrc\usart1.c</FilePath>
             </File>
+            <File>
+              <FileName>switch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\PeripheralSrc\switch.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
