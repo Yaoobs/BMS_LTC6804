@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'protect'.
  *
- * Model version                  : 1.38
+ * Model version                  : 1.40
  * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Tue Oct 20 18:04:41 2026
+ * C/C++ source code generated on : Fri Oct 23 11:59:35 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M

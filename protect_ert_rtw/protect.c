@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'protect'.
  *
- * Model version                  : 1.38
+ * Model version                  : 1.40
  * Simulink Coder version         : 23.2 (R2023b) 01-Aug-2023
- * C/C++ source code generated on : Tue Oct 20 18:04:41 2026
+ * C/C++ source code generated on : Fri Oct 23 11:59:35 2026
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -93,7 +93,7 @@ void protect_step(void)
      case protect_IN_Normal:
       UV_FLAG = 0U;
       OV_FLAG = 0U;
-      if (cell_voltage_0 < 2800) {
+      if (cell_voltage_0 < 3100) {
         protect_DW.is_c3_protect = protect_IN_Undervoltage;
         UV_FLAG = 1U;
       } else if (maxV > 4200) {
@@ -104,7 +104,7 @@ void protect_step(void)
 
      case protect_IN_Overvoltage:
       OV_FLAG = 1U;
-      if (maxV < 4100) {
+      if (maxV < 4150) {
         protect_DW.is_c3_protect = protect_IN_Normal;
         UV_FLAG = 0U;
         OV_FLAG = 0U;
@@ -114,7 +114,7 @@ void protect_step(void)
      default:
       /* case IN_Undervoltage: */
       UV_FLAG = 1U;
-      if (cell_voltage_0 > 3100) {
+      if (cell_voltage_0 > 3200) {
         protect_DW.is_c3_protect = protect_IN_Normal;
         UV_FLAG = 0U;
         OV_FLAG = 0U;

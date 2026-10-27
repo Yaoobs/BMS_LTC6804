@@ -1,21 +1,8 @@
 #include "usart1.h"
 #include "os.h"
+#include "store.h"
 
-//#define TX_UART_HEAD_0  0xAAU
-//#define TX_UART_HEAD_1  0x01U
 static volatile uint8_t tx_busy;
-
-//static uint8_t cmd[3];
-//static uint8_t cmd_index;
-//static volatile uint8_t cmd_ready; /* 收到完整3个字节命令 */
-
-//#define RX_UART_LEN        3U
-//#define RX_UART_HEAD       0x01U
-//#define RX_UART_TAIL       0x55U
-//#define RX_UART_OPEN_DSG   0x04U
-//#define RX_UART_CLOSE_DSG  0x05U
-//#define RX_UART_OPEN_CHG   0x06U
-//#define RX_UART_CLOSE_CHG  0x07U
 
 static uint8_t rx_byte;
 uint8_t tx_data[100];
@@ -94,70 +81,21 @@ void USART1_SendTxStr(void)
     USART1_SendData(tx_data, (uint16_t)len);
 }
 
-//void USART1_SendTxData() 
-//{
-//	uint8_t vi;
-//	tx_data[0] = TX_UART_HEAD_0;
-//    tx_data[1] = TX_UART_HEAD_1;
-//    for (vi = 0; vi < 12; vi++)
-//    {
-//        tx_data[vi + 2 + vi] = (uint8_t)(cell_voltage[vi] >> 8);
-//        tx_data[vi + 3 + vi] = (uint8_t)(cell_voltage[vi] & 0x00FF);
-//    }
-//    tx_data[32] = (uint8_t)(total_voltage >> 8);
-//    tx_data[33] = (uint8_t)(total_voltage & 0xFF);
-//    tx_data[34] = (uint8_t)(SOC >> 8);
-//    tx_data[35] = (uint8_t)(SOC & 0xFF);
-//    tx_data[36] = (uint8_t)(((uint16_t)Current) >> 8);
-//    tx_data[37] = (uint8_t)(((uint16_t)Current) & 0x00FF);
-//    tx_data[38] = temp;
-//    tx_data[39] = HAL_GPIO_ReadPin(GPIOB, DSG_POWER_EN_Pin);
-//    tx_data[40] = HAL_GPIO_ReadPin(GPIOB, CHG_POWER_EN_Pin);
-//    tx_data[41] = (uint8_t)(Max >> 8);
-//    tx_data[42] = (uint8_t)(Max & 0x00FF);
-//    tx_data[43] = (uint8_t)(Min >> 8);
-//    tx_data[44] = (uint8_t)(Min & 0x00FF);
-//	USART1_SendData(tx_data, TX_FRAME_LEN);
-//}
+void USART1_SendText(const char *text)
+{
+    int len;
 
-//void RECEICE_DATA_DEAL(void)
-//{
-//    uint8_t local[RX_UART_LEN];
-
-//    if (!cmd_ready)
-//    {
-//        return;
-//    }
-
-//    local[0] = cmd[0];
-//    local[1] = cmd[1];
-//    local[2] = cmd[2];
-//    cmd_ready = 0;
-//    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-
-//    if (local[0] != RX_UART_HEAD || local[2] != RX_UART_TAIL)
-//    {
-//        return;
-//    }
-
-//    switch (local[1])
-//    {
-//        case RX_UART_OPEN_DSG:
-//            Only_Open_DSG();
-//            break;
-//        case RX_UART_CLOSE_DSG:
-//            Only_Close_DSG();
-//            break;
-//        case RX_UART_OPEN_CHG:
-//            Only_Open_CHG();
-//            break;
-//        case RX_UART_CLOSE_CHG:
-//            Only_Close_CHG();
-//            break;
-//        default:
-//            break;
-//    }
-//}
+    if (text == NULL || tx_busy != 0)
+    {
+        return;
+    }
+    len = sprintf((char *)tx_data, "%s\r\n", text);
+    if (len <= 0 || len >= (int)sizeof(tx_data))
+    {
+        return;
+    }
+    USART1_SendData(tx_data, (uint16_t)len);
+}
 
 void OnUartLine(const char *line)
 {
@@ -173,6 +111,12 @@ void OnUartLine(const char *line)
 	else if(strcmp(line, "S") == 0) 
 	{
 		StateRequest = Standby;
+		Store_SaveOnStandby();//目前收到待机指令会将数据保存到flash
+	} 
+	else if(strcmp(line, "Clear") == 0) 
+	{
+		Store_Clear();
+	
 	}
 }
 
@@ -195,39 +139,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     tx_busy = 0; /* 发送完毕 */
 }
-
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-//{
-//    if (huart->Instance != USART1)
-//    {
-//        return;
-//    }
-
-//    if (cmd_index == 0)
-//    {
-//        if (rx_byte == RX_UART_HEAD)
-//        {
-//            cmd[cmd_index++] = rx_byte;
-//        }
-//    }
-//    else
-//    {
-//        cmd[cmd_index++] = rx_byte;
-//        if (cmd_index == RX_UART_LEN)
-//        {
-//            cmd_index = 0;
-//            if (cmd[2] == RX_UART_TAIL)
-//            {
-//                cmd_ready = 1;
-//            }
-//        }
-//    }
-
-//    if (!cmd_ready)
-//    {
-//        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-//    }
-//}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -270,21 +181,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
     }
 }
-
-//void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
-//{
-//    if (huart->Instance != USART1)
-//    {
-//        return;
-//    }
-
-//    tx_busy = 0;
-//    cmd_index = 0;
-//    if (!cmd_ready)
-//    {
-//        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-//    }
-//}
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {

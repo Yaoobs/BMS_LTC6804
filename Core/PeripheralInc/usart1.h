@@ -9,6 +9,7 @@
 #include <string.h>
 
 extern void USART1_SendTxStr(void);
+extern void USART1_SendText(const char *text);
 extern void RECEICE_DATA_DEAL(void);
 
 extern void USART1_Init(void);

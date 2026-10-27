@@ -48,3 +48,4 @@ bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\Ah_Integrator_Estimator.h
 bms_ltc6804\os.o: ..\Ah_Integrator_Estimator_ert_rtw\rtwtypes.h
 bms_ltc6804\os.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 bms_ltc6804\os.o: ../Core/PeripheralInc/switch.h
+bms_ltc6804\os.o: ../Core/PeripheralInc/store.h

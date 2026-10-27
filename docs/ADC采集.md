@@ -45,7 +45,7 @@
 `Task_100ms()` 发 ADCV 之前调用 `Current_CalcFromAverage()`：
 
 - 对缓冲里已有的毫伏求和，四舍五入：`(sum + count / 2) / count`。`sum` 是 `uint32_t`。
-- 偏置 `CURRENT_ADC_BASE_MV = 1368`。平均毫伏大于 1370 时，`Current = -(adc - 1368) * 50`；小于 1366 时，`Current = (1368 - adc) * 50`；1366～1370 为 0。`Current` 是 `int16_t`，高于偏置为负，低于偏置为正。
+- 偏置 `CURRENT_ADC_BASE_MV = 1368`。平均毫伏大于 1369 时，`Current = -(adc - 1368) * 50`；小于 1367 时，`Current = (1368 - adc) * 50`；1367、1368、1369 为 0。`Current` 是 `int16_t`，高于偏置为负，低于偏置为正。
 - 单次毫伏差大于 40 mV 就返回 -1 的判断已注释，现在每笔有效采样都入队。ADC 失败返回 -2，不入队。
 
 1 ms 任务排在 100 ms 任务前面。同一次 `Os_Task()` 里若两个标志都置位，先入队再平均，这次新采样会进入当次平均。
