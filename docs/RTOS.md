@@ -111,14 +111,14 @@ static void VoltageTask(void *argument)
 
 | 线程 | 唤醒方式 | 优先级 | 做什么 |
 | --- | --- | --- | --- |
-| 电流 | `osDelayUntil()`，周期 1 ms | 高 | `Current_SamplePush()`。过流返回 -1 的判断仍是注释，启用后再在这里关 MOS |
-| 控制 | `osThreadFlagsWait()`，串口行或 `VOLTAGE_READY` | 中 | 处理一行文本，写 `StateRequest`，置 `CriticalFault`，`state_machine_step()`，`JudgeBMSState()` |
-| 电压 | `osDelayUntil()`，周期 100 ms | 低 | 电流窗口平均，发 ADCV，`osDelay(4)`，读四组，总电压，`SOC_Estimator()`，`protect_step()`，再通知控制线程 |
+| 电流 | `osDelayUntil()`，周期 1 ms | 高 | `Current_SamplePush()`，只入队 |
+| 控制 | `osThreadFlagsWait()`，串口行或 `VOLTAGE_READY` | 中 | 处理一行文本，写 `StateRequest`，用过压、欠压、过流三个标志的或写入 `CriticalFault`，`state_machine_step()`，`JudgeBMSState()` |
+| 电压 | `osDelayUntil()`，周期 100 ms | 低 | 电流窗口平均，`Current >= 2000` 或 `Current <= -2000` 时把 `OC_FLAG` 写成 1，否则写成 0；发 ADCV，`osDelay(4)`，读四组，总电压，`SOC_Estimator()`，`protect_step()`，再通知控制线程 |
 | 周期 | `osDelayUntil()`，周期 1 s | 最低 | 翻转 LED，采温度，`USART1_SendTxStr()`，条件满足时喂狗 |
 
 电压线程里的 `osDelay(4)` 会让出 CPU，这 4 ms 期间电流线程照常 1 ms 采样。读四组寄存器时电流线程仍可抢占，因为 ADC 和 SPI 不是同一个外设。温度采样也要抢 ADC1，所以电流和温度必须共用一把 ADC 互斥锁。谁改通道、谁启动、谁读结果，整段放在锁里。
 
-控制线程收到串口命令后，连续调用两次 `state_machine_step()` 的条件是：第一次结束后停在待机，而 `StateRequest` 已经是充电或放电。这样两只 MOS 全关只存在于这一次处理里。电压线程通知来的那一次走一步即可，过压欠压标志在这一步里已经是新值。
+控制线程收到串口命令后，连续调用两次 `state_machine_step()` 的条件是：第一次结束后停在待机，而 `StateRequest` 已经是充电或放电。这样两只 MOS 全关只存在于这一次处理里。电压线程通知来的那一次走一步即可，过压、欠压和过流标志在这一步里已经是新值。
 
 收到整行 `S` 时仍调用 `Store_SaveOnStandby()`，放在控制线程里、状态机之前。擦页会关中断几十毫秒，这段时间电流线程也不能运行。看门狗在擦除前已经喂过。
 

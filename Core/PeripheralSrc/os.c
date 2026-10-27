@@ -203,7 +203,7 @@ void Voltage_Poll(void)
 	SOC_Estimator();
 
 	protect_step();
-	CriticalFault = (boolean_T)(OV_FLAG || UV_FLAG);
+	CriticalFault = (boolean_T)(OV_FLAG || UV_FLAG || OC_FLAG);
 	
 	state_machine_step();
 	JudgeBMSState();
@@ -332,11 +332,7 @@ void Os_Task(void)
 
 static void Task_1ms(void)
 {
-	if(Current_SamplePush() == -1)
-	{
-		OC_FLAG = 1;
-		Close_DSG_CHG();	
-	} 
+	Current_SamplePush();
 }
 
 static void Task_5ms(void)
@@ -358,6 +354,7 @@ static void Task_50ms(void)
 static void Task_100ms(void)
 {
 	Current_CalcFromAverage();
+	OC_FLAG = Current >= 2000 || Current <= -2000;
 
     /* 10 ms 任务里只发命令 */
     LTC6804_adcv();
