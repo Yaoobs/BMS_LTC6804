@@ -1,5 +1,6 @@
 #include "LTC6804.h"
 #include "spi.h"
+#include "balance.h"
 
 /* PA4 软件片选 */
 #define LTC6804_CS_high  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET)
@@ -253,6 +254,66 @@ void LTC6804_wrcfg(uint8_t config[6])
     LTC6804_CS_low;
     spi_write_array(CMD_LEN, cmd);
     LTC6804_CS_high;
+}
+
+// 假设这两个是你准备写入芯片的寄存器变量
+uint8_t cfgr4_val = 0;
+uint8_t cfgr5_val = 0;
+
+void config_balance_registers(uint8_t *array) {
+    // 1. 初始化寄存器为 0
+    cfgr4_val = 0x00;
+    cfgr5_val = 0x00;
+
+    // 2. 配置 CFGR4 (DCC1 ~ DCC8)
+    // 遍历数组的前 8 个元素 (索引 0 ~ 7)
+    for (int i = 0; i < 8; i++) {
+        if (array[i] == 1) {
+            // 如果为1，将对应的位设为1。DCC1对应Bit0，DCC2对应Bit1...
+            cfgr4_val |= (1 << i); 
+        }
+    }
+
+    // 3. 配置 CFGR5 (DCC9 ~ DCC12)
+    // 遍历数组的后 4 个元素 (索引 8 ~ 11)
+    for (int i = 8; i < 12; i++) {
+        if (array[i] == 1) {
+            // 索引8对应DCC9(Bit0)，所以位移量是 (i - 8)
+            cfgr5_val |= (1 << (i - 8));
+        }
+    }
+
+    // 4. 【修改处】强制将 CFGR5 的高 4 位 (DCT0[3:0]) 写成 0001
+    // 0x10 的二进制是 0001 0000
+    // 按位或操作会将 Bit 4 置 1，同时保留低 4 位的原有 DCC 数据
+    cfgr5_val |= 0x10; 
+    
+    // 此时 cfgr4_val 和 cfgr5_val 就是可以直接写入芯片的值
+}
+
+void send_balance_commend()
+{
+	config_balance_registers(cell_balance);
+	uint8_t cfg[6];
+	cfg[0] = 0xFC; /* GPIO=1，REFON=1，ADCOPT=0 */
+    cfg[1] = 0x00;
+    cfg[2] = 0x00;
+    cfg[3] = 0x00;
+    cfg[4] = cfgr4_val;
+    cfg[5] = cfgr5_val;
+    LTC6804_wrcfg(cfg);
+}
+
+void exit_balance_commend()
+{
+	uint8_t cfg[6];
+	cfg[0] = 0xFC; /* GPIO=1，REFON=1，ADCOPT=0 */
+    cfg[1] = 0x00;
+    cfg[2] = 0x00;
+    cfg[3] = 0x00;
+    cfg[4] = 0x00;
+    cfg[5] = 0x00;
+    LTC6804_wrcfg(cfg);
 }
 
 /* r_config: array that stores the read configuration data */

@@ -1,0 +1,1 @@
+var modelInfo = {model:"balance"};var modelHierarchy=[{model:"balance",relativePath:"_internal.html",parent:"null"},];var AddCode = true;var ProtectedModel = false;

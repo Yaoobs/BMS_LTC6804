@@ -16,6 +16,7 @@
 #include "usart1.h"
 #include "switch.h"
 #include "store.h"
+#include "balance.h"
 
 uint16_t TaskCount;                  /* For task period count */
 uint8_t Period_5ms_Count;            /* 5ms task period count */
@@ -49,7 +50,7 @@ uint16_t InitialSOC;
 static uint32_t adcv_tick;
 static uint8_t adcv_wait;
 uint16_t cell_codes[12];
-uint8_t Temp_up_flag, OC_FLAG; /* 过压，欠压，过流标志 */
+uint8_t Temp_up_flag, OC_FLAG, balance_on_flag; /* 过压，欠压，过流标志 */
 
 void LEDXToggle(void)
 {
@@ -182,6 +183,8 @@ void JudgeBMSState()
 		Only_Close_DSG();
 	}
 }
+
+
 /* Os_Task() 里每次都调用，不要写在 while 里空等 */
 void Voltage_Poll(void)
 {
@@ -198,8 +201,26 @@ void Voltage_Poll(void)
     LTC6804_rdcv(cell_codes);
     Get_TotalVoltage();
 	SOC_Estimator();
+
 	protect_step();
+	CriticalFault = (boolean_T)(OV_FLAG || UV_FLAG);
+	
+	state_machine_step();
+	JudgeBMSState();
     
+//	if(BMS_State == BMS_Standby) 
+//	{
+//		balance_step();
+//		send_balance_commend();
+//		balance_on_flag = 1;
+//	} else 
+//	{
+//		if(balance_on_flag == 1)
+//		{
+//			exit_balance_commend();
+//			balance_on_flag = 0;
+//		}
+//	}
 }
 
 void Os_Init(void)
@@ -275,10 +296,7 @@ void Os_Task(void)
     RECEICE_DATA_DEAL();
     Voltage_Poll();
 	
-	CriticalFault = (boolean_T)(OV_FLAG || UV_FLAG);
-	
-	state_machine_step();
-	JudgeBMSState();
+
 
     if (Period_1ms_Expire_Flag)
     {

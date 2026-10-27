@@ -1,0 +1,1 @@
+var PagesHeading = 'Content'; var reportPages = [["摘要","balance_survey.html"],["子系统报告","balance_subsystems.html"],["代码接口报告","balance_interface.html"],["可追溯性报告","balance_trace.html"],["静态代码度量报告","balance_metrics.html"],["代码替换报告","balance_replacements.html"],["代码生成器假设","balance_coderassumptions.html"]];

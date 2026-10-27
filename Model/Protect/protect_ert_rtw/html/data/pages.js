@@ -1,0 +1,1 @@
+var reportPages = [["摘要","protect_survey.html"],["子系统报告","protect_subsystems.html"],["代码接口报告","protect_interface.html"],["可追溯性报告","protect_trace.html"],["静态代码度量报告","protect_metrics.html"],["代码替换报告","protect_replacements.html"],["代码生成器假设","protect_coderassumptions.html"]];

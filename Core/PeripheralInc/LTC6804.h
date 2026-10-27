@@ -11,6 +11,8 @@ uint16_t pec15_calc(uint8_t len, //Number of bytes that will be used to calculat
 extern void LTC6804_initialize(void);
 extern void LTC6804_adcv(void);
 extern int8_t LTC6804_rdcv(uint16_t cell_codes[12]);
+extern void send_balance_commend(void);
+extern void exit_balance_commend(void);
 
 void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
 					uint8_t tx_len, //length of the tx data arry

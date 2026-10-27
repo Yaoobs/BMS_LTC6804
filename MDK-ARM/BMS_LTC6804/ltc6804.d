@@ -34,3 +34,5 @@ bms_ltc6804\ltc6804.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h
 bms_ltc6804\ltc6804.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 bms_ltc6804\ltc6804.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 bms_ltc6804\ltc6804.o: ../Core/Inc/spi.h
+bms_ltc6804\ltc6804.o: ..\balance_ert_rtw\balance.h
+bms_ltc6804\ltc6804.o: ..\balance_ert_rtw\rtwtypes.h
