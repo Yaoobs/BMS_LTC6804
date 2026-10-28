@@ -1,0 +1,12 @@
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/list.c
+bms_ltc6804\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+bms_ltc6804\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+bms_ltc6804\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+bms_ltc6804\list.o: ../Core/Inc/FreeRTOSConfig.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+bms_ltc6804\list.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h

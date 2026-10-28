@@ -243,52 +243,52 @@ void Os_Init(void)
 
 }
 
-void Os_Period(void)
-{
-    TaskCount++;
-    Period_1ms_Expire_Flag = true; /* 1ms period */
-    switch (TaskCount)
-    {
-        case OS_5MS_a:
-            Period_5ms_Expire_Flag = true;
-            break;
-        case OS_5MS_b:
-            Period_10ms_Count++;
-            if (Period_10ms_Count >= 2) /* 5 ms * 2 = 10 ms */
-            {
-                Period_10ms_Expire_Flag = true;
-                Period_10ms_Count = 0;
-            }
-            break;
-        case OS_5MS_c:
-            Period_50ms_Count++;
-            if (Period_50ms_Count >= 10) /* 5 ms * 10 = 50 ms */
-            {
-                Period_50ms_Expire_Flag = true;
-                Period_50ms_Count = 0;
-            }
-            break;
-        case OS_5MS_d:
-            Period_100ms_Count++;
-            if (Period_100ms_Count >= 20) /* 5 ms * 20 = 100 ms */
-            {
-                Period_100ms_Expire_Flag = true;
-                Period_100ms_Count = 0;
-            }
-            break;
-        case OS_5MS_e:
-            TaskCount = 0;
-            Period_1000ms_Count++;
-            if (Period_1000ms_Count >= 200) /* 5 ms * 200 = 1000 ms */
-            {
-                Period_1000ms_Expire_Flag = true;
-                Period_1000ms_Count = 0;
-            }
-            break;
-        default:
-            break;
-    }
-}
+//void Os_Period(void)
+//{
+//    TaskCount++;
+//    Period_1ms_Expire_Flag = true; /* 1ms period */
+//    switch (TaskCount)
+//    {
+//        case OS_5MS_a:
+//            Period_5ms_Expire_Flag = true;
+//            break;
+//        case OS_5MS_b:
+//            Period_10ms_Count++;
+//            if (Period_10ms_Count >= 2) /* 5 ms * 2 = 10 ms */
+//            {
+//                Period_10ms_Expire_Flag = true;
+//                Period_10ms_Count = 0;
+//            }
+//            break;
+//        case OS_5MS_c:
+//            Period_50ms_Count++;
+//            if (Period_50ms_Count >= 10) /* 5 ms * 10 = 50 ms */
+//            {
+//                Period_50ms_Expire_Flag = true;
+//                Period_50ms_Count = 0;
+//            }
+//            break;
+//        case OS_5MS_d:
+//            Period_100ms_Count++;
+//            if (Period_100ms_Count >= 20) /* 5 ms * 20 = 100 ms */
+//            {
+//                Period_100ms_Expire_Flag = true;
+//                Period_100ms_Count = 0;
+//            }
+//            break;
+//        case OS_5MS_e:
+//            TaskCount = 0;
+//            Period_1000ms_Count++;
+//            if (Period_1000ms_Count >= 200) /* 5 ms * 200 = 1000 ms */
+//            {
+//                Period_1000ms_Expire_Flag = true;
+//                Period_1000ms_Count = 0;
+//            }
+//            break;
+//        default:
+//            break;
+//    }
+//}
 
 void Os_Task(void)
 {
@@ -298,41 +298,42 @@ void Os_Task(void)
 	
 
 
-    if (Period_1ms_Expire_Flag)
-    {
-        Task_1ms();
-        Period_1ms_Expire_Flag = false;
-    }
-    if (Period_5ms_Expire_Flag)
-    {
-        Task_5ms();
-        Period_5ms_Expire_Flag = false;
-    }
-    if (Period_10ms_Expire_Flag)
-    {
-        Task_10ms();
-        Period_10ms_Expire_Flag = false;
-    }
-    if (Period_50ms_Expire_Flag)
-    {
-        Task_50ms();
-        Period_50ms_Expire_Flag = false;
-    }
-    if (Period_100ms_Expire_Flag)
-    {
-        Task_100ms();
-        Period_100ms_Expire_Flag = false;
-    }
-    if (Period_1000ms_Expire_Flag)
-    {
-        Task_1000ms();
-        Period_1000ms_Expire_Flag = false;
-    }
+//    if (Period_1ms_Expire_Flag)
+//    {
+//        Task_1ms();
+//        Period_1ms_Expire_Flag = false;
+//    }
+//    if (Period_5ms_Expire_Flag)
+//    {
+//        Task_5ms();
+//        Period_5ms_Expire_Flag = false;
+//    }
+//    if (Period_10ms_Expire_Flag)
+//    {
+//        Task_10ms();
+//        Period_10ms_Expire_Flag = false;
+//    }
+//    if (Period_50ms_Expire_Flag)
+//    {
+//        Task_50ms();
+//        Period_50ms_Expire_Flag = false;
+//    }
+//    if (Period_100ms_Expire_Flag)
+//    {
+//        Task_100ms();
+//        Period_100ms_Expire_Flag = false;
+//    }
+//    if (Period_1000ms_Expire_Flag)
+//    {
+//        Task_1000ms();
+//        Period_1000ms_Expire_Flag = false;
+//    }
 }
 
 static void Task_1ms(void)
 {
 	Current_SamplePush();
+
 }
 
 static void Task_5ms(void)

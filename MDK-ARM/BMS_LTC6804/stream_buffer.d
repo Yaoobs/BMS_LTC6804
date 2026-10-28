@@ -1,0 +1,14 @@
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c
+bms_ltc6804\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+bms_ltc6804\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+bms_ltc6804\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+bms_ltc6804\stream_buffer.o: ../Core/Inc/FreeRTOSConfig.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+bms_ltc6804\stream_buffer.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/stream_buffer.h

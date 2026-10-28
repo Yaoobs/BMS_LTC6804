@@ -84,6 +84,21 @@ for (group = 1; group <= 4; group++) {
 
 电流线程自己做平均，窗口不出本线程，不用为环形缓冲再加锁。平均按 100 ms 墙钟，不按“凑满 100 个点”。漏采时点数会少于 100，消息里的 `count` 交给 SOC 知道这一拍窗口变短。积分步长仍按 0.1 s，不按点数缩放。
 
+`CurrentTask` 的步骤：
+
+1. 记下起始节拍 `tick`，再记下本窗口起点 `window`。
+2. 每次循环先看现在的节拍。已经比 `tick` 晚了超过 1 ms，就把 `tick` 改成现在，不把漏掉的点补采成一串。
+3. `tick` 加 1，`osDelayUntil(tick)`。醒来的间隔是 1 ms。
+4. 获取 `adc_mutex`，调用 `Current_SamplePush()`，然后释放锁。返回时若 ADC 失败，窗口长度不变。
+5. 给 1 s 线程置电流存活标志。
+6. 现在距离 `window` 还不到 100 ms，回到第 2 步。
+7. 满 100 ms 且 `current_mv_count` 为 0，不入队，只把 `window` 改成现在。
+8. 点数大于 0 时调用 `Current_CalcFromAverage()`。把 `Current`、`Current_WindowCount()` 和当前节拍放进 `currentQueueHandle`。队列深度是 1，已经满就先取出丢掉再放。
+9. `Current_WindowClear()` 把 `current_mv_pos` 和 `current_mv_count` 清 0，`window` 改成现在。下一窗只含新点。
+10. 回到第 2 步。
+
+毫伏换算仍在 `Current_SamplePush()` 和 `Current_CalcFromAverage()` 里。当前代码已经按第 1～3 步和第 6～10 步跑起来。第 4 步的 `adc_mutex`、第 5 步的存活标志要等温度线程和 1 s 喂狗接上再加，所以 `CurrentTask` 里这两步先空着。
+
 控制线程不能同时阻塞在两条队列上。命令中断和 SOC 线程各置一个线程标志，控制线程等标志，再去对应队列里取。先把已经排着的命令处理完，再处理保护结果。这样一行 `C` 或 `D` 不用等下一帧电压。
 
 命令使状态落到待机，而请求已经是充电或放电时，同一次处理里再调用一次 `state_machine_step()`。两只 MOS 全关只留在这一次里。`S` 先走完状态机，再 `Store_SaveOnStandby()`，保存的是 SOC 线程已经发布的那一拍。

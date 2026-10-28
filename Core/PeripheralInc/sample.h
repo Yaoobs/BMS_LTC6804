@@ -4,8 +4,10 @@
 #include "adc.h"
 #include <math.h>
 
-extern int8_t Current_SamplePush(void);
+extern void Current_SamplePush(void);
 extern void Current_CalcFromAverage(void);
+extern uint8_t Current_WindowCount(void);
+extern void Current_WindowClear(void);
 extern void Temp_SamplePush(void);
 
 extern int16_t Current;
