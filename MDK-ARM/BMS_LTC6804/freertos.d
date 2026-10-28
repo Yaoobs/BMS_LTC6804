@@ -49,3 +49,8 @@ bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
 bms_ltc6804\freertos.o: ../Core/PeripheralInc/LTC6804.h
 bms_ltc6804\freertos.o: ../Core/Inc/gpio.h
 bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+bms_ltc6804\freertos.o: ../Core/PeripheralInc/os.h
+bms_ltc6804\freertos.o: ../protect_ert_rtw/protect.h
+bms_ltc6804\freertos.o: ../protect_ert_rtw/rtwtypes.h
+bms_ltc6804\freertos.o: ../Ah_Integrator_Estimator_ert_rtw/Ah_Integrator_Estimator.h
+bms_ltc6804\freertos.o: ../Ah_Integrator_Estimator_ert_rtw/rtwtypes.h

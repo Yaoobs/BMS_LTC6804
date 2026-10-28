@@ -27,6 +27,9 @@
 /* USER CODE BEGIN Includes */
 #include "sample.h"
 #include "LTC6804.h"
+#include "os.h"
+#include "protect.h"
+#include "Ah_Integrator_Estimator.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +48,23 @@ typedef struct
     uint8_t pec_mask;
     uint32_t tick;
 } VoltageMsg;
+
+typedef struct
+{
+    uint16_t soc;
+    uint16_t total_mv;
+    int16_t current;
+    uint8_t ov;
+    uint8_t uv;
+    uint8_t oc;
+} ResultMsg;
+
+typedef struct
+{
+    uint16_t soc;
+    uint16_t total_mv;
+    int16_t current;
+} DataSnapshot;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -61,7 +81,10 @@ typedef struct
 /* USER CODE BEGIN Variables */
 osMessageQueueId_t currentQueueHandle;
 osMessageQueueId_t voltageQueueHandle;
+osMessageQueueId_t resultQueueHandle;
 osMutexId_t spiMutexHandle;
+osMutexId_t dataMutexHandle;
+DataSnapshot dataSnapshot;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -75,6 +98,7 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 static void CurrentTask(void *argument);
 static void VoltageTask(void *argument);
+static void DataTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -93,6 +117,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
   spiMutexHandle = osMutexNew(NULL);
+  dataMutexHandle = osMutexNew(NULL);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -106,6 +131,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   currentQueueHandle = osMessageQueueNew(1, sizeof(CurrentMsg), NULL);
   voltageQueueHandle = osMessageQueueNew(1, sizeof(VoltageMsg), NULL);
+  resultQueueHandle = osMessageQueueNew(1, sizeof(ResultMsg), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -128,6 +154,14 @@ void MX_FREERTOS_Init(void) {
       .priority = osPriorityNormal,
     };
     osThreadNew(VoltageTask, NULL, &voltageTask_attributes);
+  }
+  {
+    const osThreadAttr_t dataTask_attributes = {
+      .name = "data",
+      .stack_size = 768,
+      .priority = osPriorityBelowNormal,
+    };
+    osThreadNew(DataTask, NULL, &dataTask_attributes);
   }
   /* USER CODE END RTOS_THREADS */
 
@@ -271,6 +305,70 @@ static void VoltageTask(void *argument)
 
         /* 8. 存活标志等 1 s 线程喂狗时再置 */
         /* 9. 回到步骤 2 */
+    }
+}
+
+/* 数据处理线程 */
+static void DataTask(void *argument)
+{
+    VoltageMsg voltage;
+    CurrentMsg current_msg;
+    ResultMsg result;
+    ResultMsg dropped;
+    static int16_t last_current;
+    uint8_t i;
+
+    (void)argument;
+    for (;;)
+    {
+        /* 1. 等一帧电压 */
+        (void)osMessageQueueGet(voltageQueueHandle, &voltage, NULL, osWaitForever);
+
+        /* 2. 取最新平均电流。没有就沿用上一拍 */
+        if (osMessageQueueGet(currentQueueHandle, &current_msg, NULL, 0) == osOK)
+        {
+            last_current = current_msg.current;
+        }
+
+        /* 3. 写入现有全局量，供原来的估算和保护函数读取 */
+        for (i = 0U; i < 12U; i++)
+        {
+            cell_voltage[i] = voltage.cell_mv[i];
+        }
+        total_voltage = voltage.total_mv;
+        Current = last_current;
+
+        /* 4. 总电压为 0 时函数直接返回，SOC 保持原值 */
+        SOC_Estimator();
+
+        /* 5. 过流看这一拍选定的电流 */
+        OC_FLAG = (Current >= 2000 || Current <= -2000);
+
+        /* 6. 过压、欠压仍由保护模型写 */
+        protect_step();
+
+        /* 7. 结果入队，只留最新一条 */
+        result.soc = SOC;
+        result.total_mv = total_voltage;
+        result.current = Current;
+        result.ov = OV_FLAG;
+        result.uv = UV_FLAG;
+        result.oc = OC_FLAG;
+        if (osMessageQueuePut(resultQueueHandle, &result, 0, 0) != osOK)
+        {
+            (void)osMessageQueueGet(resultQueueHandle, &dropped, NULL, 0);
+            (void)osMessageQueuePut(resultQueueHandle, &result, 0, 0);
+        }
+
+        /* 8. 抄一份给 1 s 线程。sprintf 不在这把锁里 */
+        osMutexAcquire(dataMutexHandle, osWaitForever);
+        dataSnapshot.soc = SOC;
+        dataSnapshot.total_mv = total_voltage;
+        dataSnapshot.current = Current;
+        osMutexRelease(dataMutexHandle);
+
+        /* 9. 控制线程的结果标志等控制线程再置 */
+        /* 10. 回到步骤 1 */
     }
 }
 /* USER CODE END Application */

@@ -8,6 +8,9 @@ extern void Os_Period(void);
 extern void Os_Task(void);
 extern void ShowInformation(void);
 extern uint16_t total_voltage;
+extern uint16_t cell_voltage[12];
+extern uint8_t OC_FLAG;
+extern void SOC_Estimator(void);
 extern void Store_SaveOnStandby(void);
 
 enum Os_Period_5ms
