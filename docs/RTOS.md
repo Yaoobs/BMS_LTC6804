@@ -22,8 +22,6 @@
 控制 / Store / 1 s ──► tx_q ──► 发送完成后再取下一条
 ```
 
-1 ms 的单个采样点不进队列。窗口留在电流线程里面，只有平均结果出队。1000 条/秒的消息会把时间花在拷贝上。
-
 | 队列 | 深度 | 一条消息里有什么 | 谁放入 | 谁取出 |
 | --- | --- | --- | --- | --- |
 | `current_q` | 1 | 平均电流、本窗口点数、节拍 | 电流线程，每 100 ms | SOC 线程 |
@@ -43,18 +41,20 @@
 队列里不放“半帧”。SOC 和过充过放要看 12 节里的最大、最小和总电压，一组 3 节到了还不能算。四组都解析完，才把 12 节毫伏和总电压放进 `voltage_q`。某一组 PEC 失败时，这一组留着上一次的毫伏，并在掩码里记下组号。整帧照样入队。
 
 ```c
-osMutexAcquire(spi_mutex, osWaitForever);
+osMutexAcquire(spiMutexHandle, osWaitForever);
 LTC6804_adcv();
-osMutexRelease(spi_mutex);
+osMutexRelease(spiMutexHandle);
 osDelay(4);
 for (group = 1; group <= 4; group++) {
-    osMutexAcquire(spi_mutex, osWaitForever);
-    LTC6804_rdcv_reg(group, raw);
-    osMutexRelease(spi_mutex);
-    /* 解析这一组 3 节；PEC 失败则保留旧毫伏并置掩码 */
+    osMutexAcquire(spiMutexHandle, osWaitForever);
+    LTC6804_rdcv_group(group, cell_codes);
+    osMutexRelease(spiMutexHandle);
+    /* PEC 失败则保留这一组旧码，并在 pec_mask 里记下组号 */
 }
-/* 12 节求和得到总电压，再放入 voltage_q */
+/* 12 节换成毫伏并求和，再放入 voltageQueueHandle */
 ```
+
+`LTC6804_rdcv_group()` 读一组并做 PEC 校验。通过才写入这一组 3 节原始码，失败返回 -1，原始码不动。`LTC6804_rdcv()` 仍是把四组连着读完，电压线程不调用它。运行步骤见下面的电压线程。
 
 ## SOC 用两条队列
 
@@ -82,7 +82,21 @@ for (group = 1; group <= 4; group++) {
 | 控制 | 无 | 先处理 `cmd_q`，再处理 `result_q`。走状态机，改 MOS，按状态写均衡 |
 | 1 s | `osDelayUntil(1000 ms)` | 温度、LED、把快照组帧放入 `tx_q`，三个存活标志都在才喂狗 |
 
-电流线程自己做平均，窗口不出本线程，不用为环形缓冲再加锁。平均按 100 ms 墙钟，不按“凑满 100 个点”。漏采时点数会少于 100，消息里的 `count` 交给 SOC 知道这一拍窗口变短。积分步长仍按 0.1 s，不按点数缩放。
+控制线程不能同时阻塞在两条队列上。命令中断和 SOC 线程各置一个线程标志，控制线程等标志，再去对应队列里取。先把已经排着的命令处理完，再处理保护结果。这样一行 `C` 或 `D` 不用等下一帧电压。
+
+命令使状态落到待机，而请求已经是充电或放电时，同一次处理里再调用一次 `state_machine_step()`。两只 MOS 全关只留在这一次里。`S` 先走完状态机，再 `Store_SaveOnStandby()`，保存的是 SOC 线程已经发布的那一拍。
+
+均衡写配置只在控制线程、状态机之后：仍是待机才计算并 `send_balance_commend()`，离开待机才 `exit_balance_commend()`。写的时候获取 `spi_mutex`，不在电压线程里写。
+
+1 s 线程组帧读的是 SOC 发布的快照，用 `data_mutex` 只包住那一次拷贝。`sprintf` 在锁外面。温度采样和电流采样共用 `adc_mutex`，包住改通道、启动、读结果。
+
+发送完成回调从 `tx_q` 取下一条再启动发送。队列里还有空位时，Store 的成功提示不会因为 `tx_busy` 被直接丢掉。队列满时丢掉新的提示。
+
+看门狗放在 1 s 线程。电流、电压、控制每次做完自己的一拍，向 1 s 线程置一个存活标志。三个都看到才喂，然后清掉。某个线程停住后，大约 8 s 内复位。
+
+### 电流线程
+
+电流线程自己做平均，窗口不出本线程，不用为环形缓冲再加锁。1 ms 的单个采样点不进队列，只有平均结果出队。1000 条/秒的消息会把时间花在拷贝上。平均按 100 ms 墙钟，不按“凑满 100 个点”。漏采时点数会少于 100，消息里的 `count` 交给 SOC 知道这一拍窗口变短。积分步长仍按 0.1 s，不按点数缩放。
 
 `CurrentTask` 的步骤：
 
@@ -99,17 +113,25 @@ for (group = 1; group <= 4; group++) {
 
 毫伏换算仍在 `Current_SamplePush()` 和 `Current_CalcFromAverage()` 里。当前代码已经按第 1～3 步和第 6～10 步跑起来。第 4 步的 `adc_mutex`、第 5 步的存活标志要等温度线程和 1 s 喂狗接上再加，所以 `CurrentTask` 里这两步先空着。
 
-控制线程不能同时阻塞在两条队列上。命令中断和 SOC 线程各置一个线程标志，控制线程等标志，再去对应队列里取。先把已经排着的命令处理完，再处理保护结果。这样一行 `C` 或 `D` 不用等下一帧电压。
+### 电压线程
 
-命令使状态落到待机，而请求已经是充电或放电时，同一次处理里再调用一次 `state_machine_step()`。两只 MOS 全关只留在这一次里。`S` 先走完状态机，再 `Store_SaveOnStandby()`，保存的是 SOC 线程已经发布的那一拍。
+电压线程只发转换命令、分四组读回、合成一帧放进 `voltageQueueHandle`。查表、安时积分、保护、状态机和 MOS 不在这个线程里。`cell_codes[12]` 留在 `VoltageTask` 里，跨周期保留。原始码 1 LSB = 100 μV，毫伏是 `cell_codes / 10`。12 节都加进总电压。`0xFFFF` 仍会变成约 6553 mV，这一步不过滤。
 
-均衡写配置只在控制线程、状态机之后：仍是待机才计算并 `send_balance_commend()`，离开待机才 `exit_balance_commend()`。写的时候获取 `spi_mutex`，不在电压线程里写。
+线程名 `"voltage"`，栈 768 字节，优先级 `osPriorityNormal`，低于电流线程。
 
-1 s 线程组帧读的是 SOC 发布的快照，用 `data_mutex` 只包住那一次拷贝。`sprintf` 在锁外面。温度采样和电流采样共用 `adc_mutex`，包住改通道、启动、读结果。
+`VoltageTask` 的步骤：
 
-发送完成回调从 `tx_q` 取下一条再启动发送。队列里还有空位时，Store 的成功提示不会因为 `tx_busy` 被直接丢掉。队列满时丢掉新的提示。
+1. 记下起始节拍 `tick`。`cell_codes[12]` 是静态数组，上电为 0。PEC 失败时沿用上一拍。
+2. 每次循环先看现在的节拍。已经比 `tick` 晚了超过 100 ms，就把 `tick` 改成现在，不把漏掉的 ADCV 连着补发。
+3. `tick` 加 100，`osDelayUntil(tick)`。醒来的间隔是 100 ms。
+4. 获取 `spiMutexHandle`，调用 `LTC6804_adcv()`，然后释放锁。命令仍是 `0x0360`。
+5. `osDelay(4)`。这 4 ms 不持有 SPI 锁。
+6. 组号从 1 到 4：获取 `spiMutexHandle`，调用 `LTC6804_rdcv_group()`，然后释放锁。返回 0 才写入这一组 3 节原始码；返回 -1 则这三个原始码不动，并把 `pec_mask` 的对应位置 1。bit0 到 bit3 对应第 1 到第 4 组。
+7. 四组都处理完，把 12 个原始码换成毫伏并求和。不管 PEC 是否失败都放进 `voltageQueueHandle`。队列深度是 1，已经满就先取出丢掉再放。节拍用读完时的 `osKernelGetTickCount()`。第一次上电、四组都失败时，毫伏和总电压是 0，也入队。
+8. 给 1 s 线程置电压存活标志。
+9. 回到第 2 步。
 
-看门狗放在 1 s 线程。电流、电压、控制每次做完自己的一拍，向 1 s 线程置一个存活标志。三个都看到才喂，然后清掉。某个线程停住后，大约 8 s 内复位。
+当前代码已经按第 1～7 步和第 9 步跑起来。第 8 步的存活标志要等 1 s 喂狗接上再加，所以 `VoltageTask` 里这一步先空着。
 
 ## 互斥量
 

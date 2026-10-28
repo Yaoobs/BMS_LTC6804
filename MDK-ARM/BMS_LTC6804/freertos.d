@@ -46,3 +46,6 @@ bms_ltc6804\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
 bms_ltc6804\freertos.o: ../Core/PeripheralInc/sample.h
 bms_ltc6804\freertos.o: ../Core/Inc/adc.h
 bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
+bms_ltc6804\freertos.o: ../Core/PeripheralInc/LTC6804.h
+bms_ltc6804\freertos.o: ../Core/Inc/gpio.h
+bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

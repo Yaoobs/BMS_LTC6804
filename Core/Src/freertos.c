@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "sample.h"
+#include "LTC6804.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,6 +37,14 @@ typedef struct
     uint8_t count;
     uint32_t tick;
 } CurrentMsg;
+
+typedef struct
+{
+    uint16_t cell_mv[12];
+    uint16_t total_mv;
+    uint8_t pec_mask;
+    uint32_t tick;
+} VoltageMsg;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -51,6 +60,8 @@ typedef struct
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 osMessageQueueId_t currentQueueHandle;
+osMessageQueueId_t voltageQueueHandle;
+osMutexId_t spiMutexHandle;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -63,6 +74,7 @@ const osThreadAttr_t defaultTask_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 static void CurrentTask(void *argument);
+static void VoltageTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -80,7 +92,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+  spiMutexHandle = osMutexNew(NULL);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -93,6 +105,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   currentQueueHandle = osMessageQueueNew(1, sizeof(CurrentMsg), NULL);
+  voltageQueueHandle = osMessageQueueNew(1, sizeof(VoltageMsg), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -107,6 +120,14 @@ void MX_FREERTOS_Init(void) {
       .priority = osPriorityHigh,
     };
     osThreadNew(CurrentTask, NULL, &currentTask_attributes);
+  }
+  {
+    const osThreadAttr_t voltageTask_attributes = {
+      .name = "voltage",
+      .stack_size = 768,
+      .priority = osPriorityNormal,
+    };
+    osThreadNew(VoltageTask, NULL, &voltageTask_attributes);
   }
   /* USER CODE END RTOS_THREADS */
 
@@ -187,6 +208,69 @@ static void CurrentTask(void *argument)
         }
         window = now;
         /* 10. 回到步骤 2 */
+    }
+}
+
+static void VoltageTask(void *argument)
+{
+    /* 1. 起始节拍。原始码跨周期保留，PEC 失败时沿用上一拍 */
+    uint32_t tick = osKernelGetTickCount();
+    static uint16_t cell_codes[12];
+    VoltageMsg msg;
+    VoltageMsg dropped;
+    uint8_t group;
+    uint8_t i;
+
+    (void)argument;
+    for (;;)
+    {
+        uint32_t now = osKernelGetTickCount();
+
+        /* 2. 落后超过 100 ms 只对齐，不补发 ADCV */
+        if ((int32_t)(now - tick) > 100)
+        {
+            tick = now;
+        }
+        /* 3. 下次在 100 ms 边界醒来 */
+        tick += 100U;
+        osDelayUntil(tick);
+
+        /* 4. 发 ADCV，随即放开 SPI 锁 */
+        osMutexAcquire(spiMutexHandle, osWaitForever);
+        LTC6804_adcv();
+        osMutexRelease(spiMutexHandle);
+
+        /* 5. 等 4 ms，这段不持有锁 */
+        osDelay(4);
+
+        /* 6. 四组各读一次。失败的组保持旧码，并记下组号 */
+        msg.pec_mask = 0U;
+        for (group = 1U; group <= 4U; group++)
+        {
+            osMutexAcquire(spiMutexHandle, osWaitForever);
+            if (LTC6804_rdcv_group(group, cell_codes) != 0)
+            {
+                msg.pec_mask |= (uint8_t)(1U << (group - 1U));
+            }
+            osMutexRelease(spiMutexHandle);
+        }
+
+        /* 7. 换成毫伏后入队，只留最新一帧 */
+        msg.total_mv = 0U;
+        for (i = 0U; i < 12U; i++)
+        {
+            msg.cell_mv[i] = (uint16_t)(cell_codes[i] / 10U);
+            msg.total_mv += msg.cell_mv[i];
+        }
+        msg.tick = osKernelGetTickCount();
+        if (osMessageQueuePut(voltageQueueHandle, &msg, 0, 0) != osOK)
+        {
+            (void)osMessageQueueGet(voltageQueueHandle, &dropped, NULL, 0);
+            (void)osMessageQueuePut(voltageQueueHandle, &msg, 0, 0);
+        }
+
+        /* 8. 存活标志等 1 s 线程喂狗时再置 */
+        /* 9. 回到步骤 2 */
     }
 }
 /* USER CODE END Application */

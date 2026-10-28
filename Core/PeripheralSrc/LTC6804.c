@@ -205,16 +205,30 @@ int8_t ltc6804_parse_cell_group(const uint8_t raw[8], uint8_t reg, uint16_t cell
     return 0;
 }
 
-int8_t LTC6804_rdcv(uint16_t cell_codes[12])
+/* group 取 1～4，对应 RDCVA～RDCVD。
+ * 返回 0：PEC 通过，写入这一组 3 节原始码。
+ * 返回 -1：这一组保持 cell_codes 里的旧值。
+ */
+int8_t LTC6804_rdcv_group(uint8_t group, uint16_t cell_codes[12])
 {
     uint8_t raw[8];
+
+    if (cell_codes == 0 || group < 1U || group > 4U)
+    {
+        return -1;
+    }
+    LTC6804_rdcv_reg(group, raw);
+    return ltc6804_parse_cell_group(raw, group, cell_codes);
+}
+
+int8_t LTC6804_rdcv(uint16_t cell_codes[12])
+{
     uint8_t group;
     int8_t err = 0;
 
     for (group = 1; group <= 4; group++)
     {
-        LTC6804_rdcv_reg(group, raw);
-        if (ltc6804_parse_cell_group(raw, group, cell_codes) != 0)
+        if (LTC6804_rdcv_group(group, cell_codes) != 0)
         {
             err = -1;
         }
