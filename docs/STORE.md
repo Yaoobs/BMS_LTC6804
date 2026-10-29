@@ -8,14 +8,7 @@ Flash 里只放一个 `StoreUser`。SRAM 里放同名的一份。上电调用 `S
 
 F103C8 的 Flash 是 64 KB，从 `0x08000000` 到 `0x0800FFFF`。中容量器件每页 1 KB，最后一页就是 `0x08000000 + 64 KB - 1 KB = 0x0800FC00`。
 
-当前分散加载文件 `MDK-ARM/BMS_LTC6804/BMS_LTC6804.sct` 仍把 `ER_IROM1` 设成 `0x08000000`、长度 `0x00010000`。收到 `S` 时已经会调用 `Store_Save()`。启用保存前要把这一段改成：
-
-```
-LR_IROM1 0x08000000 0x0000FC00  {
-  ER_IROM1 0x08000000 0x0000FC00  {
-```
-
-Keil 目标选项里的 IROM 大小同样改成 `0xFC00`。改完后看 `.map`，只读段的结束地址要小于 `0x0800FC00`。
+当前分散加载文件 `MDK-ARM/BMS_LTC6804/BMS_LTC6804.sct` 里 `ER_IROM1` 从 `0x08000000` 起、长度 `0x0000FC00`。Keil 目标选项里的 IROM 大小同样是 `0xFC00`。最后一页 `0x0800FC00` 不参与链接。改完布局后看 `.map`，只读段的结束地址要小于 `0x0800FC00`。
 
 ## StoreUser
 
@@ -69,7 +62,7 @@ F103 的编程粒度是 16 位。`HAL_FLASH_Program()` 的类型用 `FLASH_TYPEP
 
 这个函数不改 SRAM 里的 `store_user`，也不改正在使用的 `SOC` 和 `total_voltage`。清除之后如果再调用 `Store_Save()`，或再收到 `S`，运行中的值会重新写入这一页。不要在中断或 100 ms 任务里调用。
 
-读取、保存、清除都只在成功后发一行。`Store_Init()` 返回 0 时发送 `读取成功`。`Store_Save()` 校验通过后发送 `保存成功`。`Store_Clear()` 确认整页都是 `0xFF` 后发送 `清除成功`。三行都加 `\r\n`，走 `USART1_SendText()`。它和 1 秒状态文本共用 `tx_data`，`tx_busy != 0` 时这次提示不发。保存和清除的发送放在开中断之后。源文件里这三句用 GBK 字节写出，和现有串口文本一致。
+读取、保存、清除都只在成功后发一行。`Store_Init()` 返回 0 时发送 `读取成功`。`Store_Save()` 校验通过后发送 `保存成功`。`Store_Clear()` 确认整页都是 `0xFF` 后发送 `清除成功`。三行都加 `\r\n`，走 `USART1_SendText()`。它和 1 秒状态文本共用发送队列，队列满时这次提示不发。保存和清除的发送放在开中断之后。源文件里这三句用 GBK 字节写出，和现有串口文本一致。
 
 ## store.h
 
@@ -243,13 +236,12 @@ if (Store_Init() == 0)
 }
 ```
 
-收到整行 `S` 时保存。`OnUartLine()` 先写 `StateRequest`，再调用 `Store_SaveOnStandby()`。这次调用在同一次 `Os_Task()` 的 `Voltage_Poll()` 之前，写入的是上一拍的 `SOC` 和 `total_voltage`。
+控制线程收到整行 `S` 时，先把 `StateRequest` 写成待机并走完状态机，再调用 `Store_SaveOnStandby()`。写入的是数据处理线程已经发布的 `SOC` 和 `total_voltage`。
 
 ```c
 else if (strcmp(line, "S") == 0)
 {
     StateRequest = Standby;
-    Store_SaveOnStandby();
 }
 ```
 
