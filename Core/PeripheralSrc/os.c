@@ -369,7 +369,7 @@ static void Task_1000ms(void)
     LEDXToggle();
     Temp_SamplePush();
    
-    USART1_SendTxStr();
+    USART1_SendTxStr(SOC, total_voltage, Current);
 }
 
 static void SetModelInput(void)

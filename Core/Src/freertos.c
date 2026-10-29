@@ -33,6 +33,8 @@
 #include "state_machine.h"
 #include "balance.h"
 #include "store.h"
+#include "usart1.h"
+#include "iwdg.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -89,9 +91,14 @@ osMessageQueueId_t currentQueueHandle;
 osMessageQueueId_t voltageQueueHandle;
 osMessageQueueId_t resultQueueHandle;
 osMessageQueueId_t cmdQueueHandle;
+osMessageQueueId_t txQueueHandle;
 osMutexId_t spiMutexHandle;
 osMutexId_t dataMutexHandle;
+osMutexId_t adcMutexHandle;
 DataSnapshot dataSnapshot;
+static volatile uint8_t currentAlive;
+static volatile uint8_t voltageAlive;
+static volatile uint8_t controlAlive;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -107,6 +114,7 @@ static void CurrentTask(void *argument);
 static void VoltageTask(void *argument);
 static void DataTask(void *argument);
 static void ControlTask(void *argument);
+static void ReportTask(void *argument);
 osThreadId_t controlTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
@@ -127,6 +135,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_MUTEX */
   spiMutexHandle = osMutexNew(NULL);
   dataMutexHandle = osMutexNew(NULL);
+  adcMutexHandle = osMutexNew(NULL);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -142,6 +151,7 @@ void MX_FREERTOS_Init(void) {
   voltageQueueHandle = osMessageQueueNew(1, sizeof(VoltageMsg), NULL);
   resultQueueHandle = osMessageQueueNew(1, sizeof(ResultMsg), NULL);
   cmdQueueHandle = osMessageQueueNew(4, CMD_TEXT_LEN, NULL);
+  txQueueHandle = osMessageQueueNew(4, sizeof(TxFrame), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -176,10 +186,18 @@ void MX_FREERTOS_Init(void) {
   {
     const osThreadAttr_t controlTask_attributes = {
       .name = "ctrl",
-      .stack_size = 512,
+      .stack_size = 1024,
       .priority = osPriorityAboveNormal,
     };
     controlTaskHandle = osThreadNew(ControlTask, NULL, &controlTask_attributes);
+  }
+  {
+    const osThreadAttr_t reportTask_attributes = {
+      .name = "report",
+      .stack_size = 1024,
+      .priority = osPriorityLow,
+    };
+    osThreadNew(ReportTask, NULL, &reportTask_attributes);
   }
   /* USER CODE END RTOS_THREADS */
 
@@ -231,10 +249,13 @@ static void CurrentTask(void *argument)
         tick += 1U;
         osDelayUntil(tick);
 
-        /* 4. 采一个点。adc_mutex 等温度线程再加 */
+        /* 4. 采一个点，和报告线程共用 adc 锁 */
+        osMutexAcquire(adcMutexHandle, osWaitForever);
         Current_SamplePush();
+        osMutexRelease(adcMutexHandle);
 
-        /* 5. 存活标志等 1 s 线程喂狗时再置 */
+        /* 5. 置存活标志，报告线程喂狗后清掉 */
+        currentAlive = 1U;
 
         /* 6. 未满 100 ms 继续采样 */
         now = osKernelGetTickCount();
@@ -321,7 +342,8 @@ static void VoltageTask(void *argument)
             (void)osMessageQueuePut(voltageQueueHandle, &msg, 0, 0);
         }
 
-        /* 8. 存活标志等 1 s 线程喂狗时再置 */
+        /* 8. 置存活标志，报告线程喂狗后清掉 */
+        voltageAlive = 1U;
         /* 9. 回到步骤 2 */
     }
 }
@@ -378,7 +400,7 @@ static void DataTask(void *argument)
             (void)osMessageQueuePut(resultQueueHandle, &result, 0, 0);
         }
 
-        /* 8. 抄一份给 1 s 线程。sprintf 不在这把锁里 */
+        /* 8. 抄一份给报告线程。sprintf 不在这把锁里 */
         osMutexAcquire(dataMutexHandle, osWaitForever);
         dataSnapshot.soc = SOC;
         dataSnapshot.total_mv = total_voltage;
@@ -528,8 +550,56 @@ static void ControlTask(void *argument)
             Control_HandleResult(&result);
         }
 
-        /* 5. 存活标志等 1 s 线程喂狗时再置 */
+        /* 5. 置存活标志，报告线程喂狗后清掉 */
+        controlAlive = 1U;
         /* 6. 回到步骤 1 */
+    }
+}
+
+/* 报告线程 */
+static void ReportTask(void *argument)
+{
+    /* 1. 起始节拍 */
+    uint32_t tick = osKernelGetTickCount();
+    DataSnapshot snap;
+
+    (void)argument;
+    for (;;)
+    {
+        uint32_t now = osKernelGetTickCount();
+
+        /* 2. 落后超过 1 s 只对齐，不补发 */
+        if ((int32_t)(now - tick) > 1000)
+        {
+            tick = now;
+        }
+        /* 3. 下次在 1 s 边界醒来 */
+        tick += 1000U;
+        osDelayUntil(tick);
+
+        /* 4. 采温度，和电流线程共用 adc 锁 */
+        osMutexAcquire(adcMutexHandle, osWaitForever);
+        Temp_SamplePush();
+        osMutexRelease(adcMutexHandle);
+
+        /* 5. 翻转 LED */
+        LEDXToggle();
+
+        /* 6. 锁内只复制快照。拼串和读 MOS 在锁外，放进发送队列 */
+        osMutexAcquire(dataMutexHandle, osWaitForever);
+        snap = dataSnapshot;
+        osMutexRelease(dataMutexHandle);
+        USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
+
+        /* 7. 三条存活标志都在，才喂狗并清掉 */
+        if (currentAlive != 0U && voltageAlive != 0U && controlAlive != 0U)
+        {
+            HAL_IWDG_Refresh(&hiwdg);
+            currentAlive = 0U;
+            voltageAlive = 0U;
+            controlAlive = 0U;
+        }
+        /* 8. 回到步骤 2 */
     }
 }
 /* USER CODE END Application */

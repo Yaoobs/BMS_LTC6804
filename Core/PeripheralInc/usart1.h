@@ -8,7 +8,15 @@
 #include <stdio.h>
 #include <string.h>
 
-extern void USART1_SendTxStr(void);
+#define TX_FRAME_LEN 96U
+
+typedef struct
+{
+    uint8_t len;
+    uint8_t data[TX_FRAME_LEN];
+} TxFrame;
+
+extern void USART1_SendTxStr(uint16_t soc, uint16_t total_mv, int16_t current);
 extern void USART1_SendText(const char *text);
 extern void RECEICE_DATA_DEAL(void);
 

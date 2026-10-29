@@ -59,4 +59,7 @@ bms_ltc6804\freertos.o: ../state_machine_ert_rtw/rtwtypes.h
 bms_ltc6804\freertos.o: ../balance_ert_rtw/balance.h
 bms_ltc6804\freertos.o: ../balance_ert_rtw/rtwtypes.h
 bms_ltc6804\freertos.o: ../Core/PeripheralInc/store.h
+bms_ltc6804\freertos.o: ../Core/PeripheralInc/usart1.h
+bms_ltc6804\freertos.o: ../Core/Inc/usart.h
 bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+bms_ltc6804\freertos.o: ../Core/Inc/iwdg.h

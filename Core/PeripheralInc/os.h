@@ -15,6 +15,7 @@ extern void SOC_Estimator(void);
 extern void JudgeBMSState(void);
 extern void Store_SaveOnStandby(void);
 extern void Control_PostLine(const char *line);
+extern void LEDXToggle(void);
 
 enum Os_Period_5ms
 {
