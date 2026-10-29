@@ -86,7 +86,7 @@ for (group = 1; group <= 4; group++) {
 
 命令使状态落到待机，而请求已经是充电或放电时，同一次处理里再调用一次 `state_machine_step()`。两只 MOS 全关只留在这一次里。`S` 先走完状态机，再 `Store_SaveOnStandby()`，保存的是数据处理线程已经发布的那一拍。
 
-均衡写配置只在控制线程、状态机之后：仍是待机才计算并 `send_balance_commend()`，离开待机才 `exit_balance_commend()`。写的时候获取 `spi_mutex`，不在电压线程里写。
+均衡写配置只在控制线程、状态机之后：仍是待机才计算并 `send_balance_commend()`，离开待机才 `exit_balance_commend()`。写的时候获取 `spiMutexHandle`，不在电压线程里写。运行步骤见下面的控制线程。
 
 1 s 线程组帧读的是数据处理线程发布的快照，用 `dataMutexHandle` 只包住那一次拷贝。`sprintf` 在锁外面。温度采样和电流采样共用 `adc_mutex`，包住改通道、启动、读结果。
 
@@ -152,7 +152,28 @@ for (group = 1; group <= 4; group++) {
 9. 给控制线程置结果标志。
 10. 回到第 1 步。
 
-不调用 `state_machine_step()` 和 `JudgeBMSState()`，也不在这里写 `CriticalFault`。当前代码已经按第 1～8 步和第 10 步跑起来。第 9 步的结果标志要等控制线程接上再加，所以 `DataTask` 里这一步先空着。
+不调用 `state_machine_step()` 和 `JudgeBMSState()`，也不在这里写 `CriticalFault`。当前代码已经按第 1～10 步跑起来。第 9 步会给控制线程置结果标志。
+
+### 控制线程
+
+控制线程没有自己的周期。它不堵在某一条队列上，等命令标志或结果标志，先处理命令，再处理一帧保护结果。状态机和 MOS 在这个线程里。调度器里的名字是 `"ctrl"`，函数是 `ControlTask`。栈 512 字节，优先级 `osPriorityAboveNormal`，低于电流线程、高于电压线程。`configTOTAL_HEAP_SIZE` 现为 8192，否则这个线程创建会失败。
+
+进入循环之前，用超时 0 把 `cmdQueueHandle` 取空并逐行处理。调度器还没运行时，`Control_PostLine()` 会入队但不置命令标志，开头这一次就是把这些行处理掉。进入循环之后，只有命令标志置位才再取队列。
+
+`ControlTask` 的步骤：
+
+1. `osThreadFlagsWait` 等待 `CTRL_FLAG_CMD` 或 `CTRL_FLAG_RESULT`，有一个置位就醒。返回值小于 0 就继续等。
+2. 命令标志置位时，用超时 0 把命令队列取空。`"Clear"` 调用 `Store_Clear()`，不改请求，也不走状态机。`"D"`、`"C"`、`"S"` 写入 `StateRequest`，调用 `state_machine_step()`。这一步落到待机，而请求已经是充电或放电时，同一次里再调用一次，然后 `JudgeBMSState()` 一次。两次步进之间不改 MOS。这一行是 `"S"` 时，状态机走完再 `Store_SaveOnStandby()`。其它行丢掉。状态图每次只走一条边，充电和放电互切必须经过待机，所以命令要在同一次处理里把第二步走完，避免两只 MOS 全关留到下一帧电压。
+3. 结果标志置位时，用超时 0 取 `resultQueueHandle` 一条。取到后 `CriticalFault = ov || uv || oc`，`state_machine_step()` 一次，`JudgeBMSState()` 一次。结果不改请求。进故障、或从故障回到待机，一步就能完成，和原来每次电压读完只走一步一样。回到待机后，下一次结果还会再走一步。
+4. `Control_WriteBalance()`：仍是待机就 `balance_step()`，再在 `spiMutexHandle` 里 `send_balance_commend()`，`balance_on_flag` 置 1。离开待机且标志为 1，就在锁里 `exit_balance_commend()`，标志清 0。计算均衡时不持有这把锁。
+5. 给 1 s 线程置控制存活标志。
+6. 回到第 1 步。
+
+当前代码已经按第 1～3 步和第 6 步跑起来。第 4 步的函数还在，命令路径和结果路径里的调用都注释掉了。第 5 步的存活标志要等 1 s 喂狗接上再加。
+
+接收中断在一行以 `\n` 结束时调用 `Control_PostLine()`。文本最多 31 个字符再加结尾 0；更长、队列已满、或控制线程还没建好，就丢掉这一行。内核已经运行才置命令标志。随即重新 `HAL_UART_Receive_IT()`。不在中断里改 `StateRequest`，也不在中断里保存。
+
+待机图里充电请求仍排在故障前面。命令落到待机后再走的那一步，一条 `"C"` 仍会进入充电。
 
 ## 互斥量
 

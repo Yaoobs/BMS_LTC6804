@@ -111,7 +111,7 @@ void OnUartLine(const char *line)
 	else if(strcmp(line, "S") == 0) 
 	{
 		StateRequest = Standby;
-		Store_SaveOnStandby();//目前收到待机指令会将数据保存到flash
+//目前收到待机指令会将数据保存到flash
 	} 
 	else if(strcmp(line, "Clear") == 0) 
 	{
@@ -163,7 +163,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         else
         {
             rx_str[rx_len] = '\0';
-            rx_ready = 1;
+            Control_PostLine((const char *)rx_str);
+            rx_len = 0;
         }
     }
     else if (rx_discard || (rx_len + 1U >= RX_STR_MAX))
@@ -176,10 +177,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         rx_str[rx_len++] = byte;
     }
 
-    if (!rx_ready)
-    {
-        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-    }
+    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -191,8 +189,5 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     tx_busy = 0;
     rx_len = 0;
     rx_discard = 0;
-    if (!rx_ready)
-    {
-        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-    }
+    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
 }

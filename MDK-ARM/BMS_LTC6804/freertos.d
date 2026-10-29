@@ -54,3 +54,9 @@ bms_ltc6804\freertos.o: ../protect_ert_rtw/protect.h
 bms_ltc6804\freertos.o: ../protect_ert_rtw/rtwtypes.h
 bms_ltc6804\freertos.o: ../Ah_Integrator_Estimator_ert_rtw/Ah_Integrator_Estimator.h
 bms_ltc6804\freertos.o: ../Ah_Integrator_Estimator_ert_rtw/rtwtypes.h
+bms_ltc6804\freertos.o: ../state_machine_ert_rtw/state_machine.h
+bms_ltc6804\freertos.o: ../state_machine_ert_rtw/rtwtypes.h
+bms_ltc6804\freertos.o: ../balance_ert_rtw/balance.h
+bms_ltc6804\freertos.o: ../balance_ert_rtw/rtwtypes.h
+bms_ltc6804\freertos.o: ../Core/PeripheralInc/store.h
+bms_ltc6804\freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

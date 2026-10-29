@@ -10,8 +10,11 @@ extern void ShowInformation(void);
 extern uint16_t total_voltage;
 extern uint16_t cell_voltage[12];
 extern uint8_t OC_FLAG;
+extern uint8_t balance_on_flag;
 extern void SOC_Estimator(void);
+extern void JudgeBMSState(void);
 extern void Store_SaveOnStandby(void);
+extern void Control_PostLine(const char *line);
 
 enum Os_Period_5ms
 {

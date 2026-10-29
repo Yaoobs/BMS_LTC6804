@@ -30,6 +30,10 @@
 #include "os.h"
 #include "protect.h"
 #include "Ah_Integrator_Estimator.h"
+#include "state_machine.h"
+#include "balance.h"
+#include "store.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,7 +73,9 @@ typedef struct
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define CMD_TEXT_LEN       32U
+#define CTRL_FLAG_CMD      0x01U
+#define CTRL_FLAG_RESULT   0x02U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -82,6 +88,7 @@ typedef struct
 osMessageQueueId_t currentQueueHandle;
 osMessageQueueId_t voltageQueueHandle;
 osMessageQueueId_t resultQueueHandle;
+osMessageQueueId_t cmdQueueHandle;
 osMutexId_t spiMutexHandle;
 osMutexId_t dataMutexHandle;
 DataSnapshot dataSnapshot;
@@ -99,6 +106,8 @@ const osThreadAttr_t defaultTask_attributes = {
 static void CurrentTask(void *argument);
 static void VoltageTask(void *argument);
 static void DataTask(void *argument);
+static void ControlTask(void *argument);
+osThreadId_t controlTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -132,6 +141,7 @@ void MX_FREERTOS_Init(void) {
   currentQueueHandle = osMessageQueueNew(1, sizeof(CurrentMsg), NULL);
   voltageQueueHandle = osMessageQueueNew(1, sizeof(VoltageMsg), NULL);
   resultQueueHandle = osMessageQueueNew(1, sizeof(ResultMsg), NULL);
+  cmdQueueHandle = osMessageQueueNew(4, CMD_TEXT_LEN, NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -162,6 +172,14 @@ void MX_FREERTOS_Init(void) {
       .priority = osPriorityBelowNormal,
     };
     osThreadNew(DataTask, NULL, &dataTask_attributes);
+  }
+  {
+    const osThreadAttr_t controlTask_attributes = {
+      .name = "ctrl",
+      .stack_size = 512,
+      .priority = osPriorityAboveNormal,
+    };
+    controlTaskHandle = osThreadNew(ControlTask, NULL, &controlTask_attributes);
   }
   /* USER CODE END RTOS_THREADS */
 
@@ -367,8 +385,151 @@ static void DataTask(void *argument)
         dataSnapshot.current = Current;
         osMutexRelease(dataMutexHandle);
 
-        /* 9. 控制线程的结果标志等控制线程再置 */
+        /* 9. 通知控制线程有一帧结果 */
+        if (controlTaskHandle != NULL)
+        {
+            (void)osThreadFlagsSet(controlTaskHandle, CTRL_FLAG_RESULT);
+        }
         /* 10. 回到步骤 1 */
+    }
+}
+
+void Control_PostLine(const char *line)
+{
+    char msg[CMD_TEXT_LEN];
+    uint8_t n;
+
+    if (line == NULL || cmdQueueHandle == NULL || controlTaskHandle == NULL)
+    {
+        return;
+    }
+    for (n = 0U; n < (CMD_TEXT_LEN - 1U) && line[n] != '\0'; n++)
+    {
+        msg[n] = line[n];
+    }
+    if (line[n] != '\0')
+    {
+        return;
+    }
+    msg[n] = '\0';
+    if (osMessageQueuePut(cmdQueueHandle, msg, 0, 0) != osOK)
+    {
+        return;
+    }
+    if (osKernelGetState() == osKernelRunning)
+    {
+        (void)osThreadFlagsSet(controlTaskHandle, CTRL_FLAG_CMD);
+    }
+}
+
+/* 4. 状态和 MOS 确定后写均衡。SPI 锁只包住写配置 */
+static void Control_WriteBalance(void)
+{
+    if (BMS_State == BMS_Standby)
+    {
+        balance_step();
+        osMutexAcquire(spiMutexHandle, osWaitForever);
+        send_balance_commend();
+        osMutexRelease(spiMutexHandle);
+        balance_on_flag = 1U;
+    }
+    else if (balance_on_flag == 1U)
+    {
+        osMutexAcquire(spiMutexHandle, osWaitForever);
+        exit_balance_commend();
+        osMutexRelease(spiMutexHandle);
+        balance_on_flag = 0U;
+    }
+}
+
+static void Control_HandleLine(const char *line)
+{
+    if (strcmp(line, "Clear") == 0)
+    {
+        (void)Store_Clear();
+        return;
+    }
+    if (strcmp(line, "D") == 0)
+    {
+        StateRequest = Driving;
+    }
+    else if (strcmp(line, "C") == 0)
+    {
+        StateRequest = Charging;
+    }
+    else if (strcmp(line, "S") == 0)
+    {
+        StateRequest = Standby;
+    }
+    else
+    {
+        return;
+    }
+
+    /* 2. 落到待机且请求已是充电或放电时，同一次再走一步 */
+    state_machine_step();
+    if (BMS_State == BMS_Standby &&
+        (StateRequest == Charging || StateRequest == Driving))
+    {
+        state_machine_step();
+    }
+    JudgeBMSState();
+    if (strcmp(line, "S") == 0)
+    {
+        Store_SaveOnStandby();
+    }
+//    Control_WriteBalance();
+}
+
+static void Control_HandleResult(const ResultMsg *result)
+{
+    /* 3. 结果只步进一次 */
+    CriticalFault = (boolean_T)(result->ov || result->uv || result->oc);
+    state_machine_step();
+    JudgeBMSState();
+//    Control_WriteBalance();
+}
+
+/* 控制线程 */
+static void ControlTask(void *argument)
+{
+    uint32_t flags;
+    char line[CMD_TEXT_LEN];
+    ResultMsg result;
+
+    (void)argument;
+    while (osMessageQueueGet(cmdQueueHandle, line, NULL, 0) == osOK)
+    {
+        Control_HandleLine(line);
+    }
+    for (;;)
+    {
+        /* 1. 命令或结果标志，有一个就醒 */
+        flags = osThreadFlagsWait(CTRL_FLAG_CMD | CTRL_FLAG_RESULT,
+                                  osFlagsWaitAny, osWaitForever);
+        if ((int32_t)flags < 0)
+        {
+            continue;
+        }
+
+        /* 2. 先把已经排着的命令处理完 */
+        if ((flags & CTRL_FLAG_CMD) != 0U)
+        {
+            while (osMessageQueueGet(cmdQueueHandle, line, NULL, 0) == osOK)
+            {
+                Control_HandleLine(line);
+            }
+        }
+
+        /* 3. 再处理一帧保护结果 */
+        if ((flags & CTRL_FLAG_RESULT) != 0U &&
+            osMessageQueueGet(resultQueueHandle, &result, NULL, 0) == osOK)
+        {
+            Control_HandleResult(&result);
+        }
+
+        /* 5. 存活标志等 1 s 线程喂狗时再置 */
+        /* 6. 回到步骤 1 */
     }
 }
 /* USER CODE END Application */
