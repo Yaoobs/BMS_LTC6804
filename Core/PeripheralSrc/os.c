@@ -18,37 +18,12 @@
 #include "store.h"
 #include "balance.h"
 
-uint16_t TaskCount;                  /* For task period count */
-uint8_t Period_5ms_Count;            /* 5ms task period count */
-uint8_t Period_10ms_Count;           /* 10ms task period count */
-uint8_t Period_50ms_Count;           /* 20ms task period count */
-uint8_t Period_100ms_Count;          /* 100ms task period count */
-uint8_t Period_1000ms_Count;         /* 1000ms task period count */
-
-_Bool volatile Period_1ms_Expire_Flag = false;
-_Bool volatile Period_5ms_Expire_Flag = false;
-_Bool volatile Period_10ms_Expire_Flag = false;
-_Bool volatile Period_50ms_Expire_Flag = false;
-_Bool volatile Period_100ms_Expire_Flag = false;
-_Bool volatile Period_1000ms_Expire_Flag = false;
-
-static void Task_1ms(void);
-static void Task_5ms(void);
-static void Task_10ms(void);
-static void Task_50ms(void);
-static void Task_100ms(void);
-static void Task_1000ms(void);
-static void SetModelInput(void);
-static void SetModelOutput(void);
-
 /* 业务 */
 uint16_t total_voltage;
 uint16_t cell_voltage[12];
 
 uint16_t InitialSOC;
 
-static uint32_t adcv_tick;
-static uint8_t adcv_wait;
 uint16_t cell_codes[12];
 uint8_t Temp_up_flag, OC_FLAG, balance_on_flag; /* 过压，欠压，过流标志 */
 
@@ -149,19 +124,6 @@ void Store_SaveOnStandby(void)
     Store_Save();
 }
 
-void Get_TotalVoltage(void)
-{
-    uint8_t vi;
-
-    total_voltage = 0;
-    for (vi = 0; vi < 12; vi++)
-    {
-        cell_voltage[vi] = cell_codes[vi] / 10;
-        total_voltage += cell_voltage[vi];
-    }
-}
-
-
 void JudgeBMSState()
 {
 	if(BMS_State == BMS_Standby) {
@@ -184,50 +146,19 @@ void JudgeBMSState()
 	}
 }
 
-
-/* Os_Task() 里每次都调用，不要写在 while 里空等 */
-void Voltage_Poll(void)
-{
-    if (adcv_wait == 0)
-    {
-        return;
-    }
-    if ((uint32_t)(HAL_GetTick() - adcv_tick) < 4U)
-    {
-        return;
-    }
-
-    adcv_wait = 0;
-    LTC6804_rdcv(cell_codes);
-    Get_TotalVoltage();
-	SOC_Estimator();
-
-	protect_step();
-	CriticalFault = (boolean_T)(OV_FLAG || UV_FLAG || OC_FLAG);
-	
-	state_machine_step();
-	JudgeBMSState();
-    
-//	if(BMS_State == BMS_Standby) 
-//	{
-//		balance_step();
-//		send_balance_commend();
-//		balance_on_flag = 1;
-//	} else 
-//	{
-//		if(balance_on_flag == 1)
-//		{
-//			exit_balance_commend();
-//			balance_on_flag = 0;
-//		}
-//	}
-}
-
 void Os_Init(void)
 
 {	StoreUser *user;
 	
-	HAL_Delay(5000); //初始化增加延时
+	{
+		uint8_t wait_s;
+
+		for (wait_s = 0U; wait_s < 5U; wait_s++)
+		{
+			HAL_IWDG_Refresh(&hiwdg);
+			HAL_Delay(1000);
+		}
+	} //初始化增加延时
     HAL_ADCEx_Calibration_Start(&hadc1); /* 校准 ADC */
 	LTC6804_initialize();                /* LTC6804初始化配置 */
     USART1_Init();
@@ -240,142 +171,5 @@ void Os_Init(void)
 		
     }
 
-
-}
-
-//void Os_Period(void)
-//{
-//    TaskCount++;
-//    Period_1ms_Expire_Flag = true; /* 1ms period */
-//    switch (TaskCount)
-//    {
-//        case OS_5MS_a:
-//            Period_5ms_Expire_Flag = true;
-//            break;
-//        case OS_5MS_b:
-//            Period_10ms_Count++;
-//            if (Period_10ms_Count >= 2) /* 5 ms * 2 = 10 ms */
-//            {
-//                Period_10ms_Expire_Flag = true;
-//                Period_10ms_Count = 0;
-//            }
-//            break;
-//        case OS_5MS_c:
-//            Period_50ms_Count++;
-//            if (Period_50ms_Count >= 10) /* 5 ms * 10 = 50 ms */
-//            {
-//                Period_50ms_Expire_Flag = true;
-//                Period_50ms_Count = 0;
-//            }
-//            break;
-//        case OS_5MS_d:
-//            Period_100ms_Count++;
-//            if (Period_100ms_Count >= 20) /* 5 ms * 20 = 100 ms */
-//            {
-//                Period_100ms_Expire_Flag = true;
-//                Period_100ms_Count = 0;
-//            }
-//            break;
-//        case OS_5MS_e:
-//            TaskCount = 0;
-//            Period_1000ms_Count++;
-//            if (Period_1000ms_Count >= 200) /* 5 ms * 200 = 1000 ms */
-//            {
-//                Period_1000ms_Expire_Flag = true;
-//                Period_1000ms_Count = 0;
-//            }
-//            break;
-//        default:
-//            break;
-//    }
-//}
-
-void Os_Task(void)
-{
-    HAL_IWDG_Refresh(&hiwdg);
-    RECEICE_DATA_DEAL();
-    Voltage_Poll();
-	
-
-
-//    if (Period_1ms_Expire_Flag)
-//    {
-//        Task_1ms();
-//        Period_1ms_Expire_Flag = false;
-//    }
-//    if (Period_5ms_Expire_Flag)
-//    {
-//        Task_5ms();
-//        Period_5ms_Expire_Flag = false;
-//    }
-//    if (Period_10ms_Expire_Flag)
-//    {
-//        Task_10ms();
-//        Period_10ms_Expire_Flag = false;
-//    }
-//    if (Period_50ms_Expire_Flag)
-//    {
-//        Task_50ms();
-//        Period_50ms_Expire_Flag = false;
-//    }
-//    if (Period_100ms_Expire_Flag)
-//    {
-//        Task_100ms();
-//        Period_100ms_Expire_Flag = false;
-//    }
-//    if (Period_1000ms_Expire_Flag)
-//    {
-//        Task_1000ms();
-//        Period_1000ms_Expire_Flag = false;
-//    }
-}
-
-static void Task_1ms(void)
-{
-	Current_SamplePush();
-
-}
-
-static void Task_5ms(void)
-{
-}
-
-static void Task_10ms(void)
-{
-
-
-
-}
-
-static void Task_50ms(void)
-{
-
-}
-
-static void Task_100ms(void)
-{
-	Current_CalcFromAverage();
-	OC_FLAG = Current >= 2000 || Current <= -2000;
-
-    /* 10 ms 任务里只发命令 */
-    LTC6804_adcv();
-    adcv_tick = HAL_GetTick();
-    adcv_wait = 1;
-	
-}
-
-static void Task_1000ms(void)
-{
-    LEDXToggle();
-    Temp_SamplePush();
-   
-    USART1_SendTxStr(SOC, total_voltage, Current);
-}
-
-static void SetModelInput(void)
-{
-}
-
-static void SetModelOutput(void)
-{
+	HAL_IWDG_Refresh(&hiwdg);
 }

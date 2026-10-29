@@ -99,14 +99,10 @@ DataSnapshot dataSnapshot;
 static volatile uint8_t currentAlive;
 static volatile uint8_t voltageAlive;
 static volatile uint8_t controlAlive;
+static osThreadId_t currentTaskHandle;
+static osThreadId_t voltageTaskHandle;
+static osThreadId_t dataTaskHandle;
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -117,8 +113,6 @@ static void ControlTask(void *argument);
 static void ReportTask(void *argument);
 osThreadId_t controlTaskHandle;
 /* USER CODE END FunctionPrototypes */
-
-void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -155,17 +149,14 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   {
     const osThreadAttr_t currentTask_attributes = {
       .name = "current",
-      .stack_size = 512,
+      .stack_size = 1024,
       .priority = osPriorityHigh,
     };
-    osThreadNew(CurrentTask, NULL, &currentTask_attributes);
+    currentTaskHandle = osThreadNew(CurrentTask, NULL, &currentTask_attributes);
   }
   {
     const osThreadAttr_t voltageTask_attributes = {
@@ -173,7 +164,7 @@ void MX_FREERTOS_Init(void) {
       .stack_size = 768,
       .priority = osPriorityNormal,
     };
-    osThreadNew(VoltageTask, NULL, &voltageTask_attributes);
+    voltageTaskHandle = osThreadNew(VoltageTask, NULL, &voltageTask_attributes);
   }
   {
     const osThreadAttr_t dataTask_attributes = {
@@ -181,7 +172,7 @@ void MX_FREERTOS_Init(void) {
       .stack_size = 768,
       .priority = osPriorityBelowNormal,
     };
-    osThreadNew(DataTask, NULL, &dataTask_attributes);
+    dataTaskHandle = osThreadNew(DataTask, NULL, &dataTask_attributes);
   }
   {
     const osThreadAttr_t controlTask_attributes = {
@@ -205,24 +196,6 @@ void MX_FREERTOS_Init(void) {
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
 
-}
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -249,10 +222,12 @@ static void CurrentTask(void *argument)
         tick += 1U;
         osDelayUntil(tick);
 
-        /* 4. 采一个点，和报告线程共用 adc 锁 */
+        /* 4. 采一个点。先避开正在进行的 SPI，再和报告线程共用 adc 锁 */
+        osMutexAcquire(spiMutexHandle, osWaitForever);
         osMutexAcquire(adcMutexHandle, osWaitForever);
         Current_SamplePush();
         osMutexRelease(adcMutexHandle);
+        osMutexRelease(spiMutexHandle);
 
         /* 5. 置存活标志，报告线程喂狗后清掉 */
         currentAlive = 1U;
@@ -556,6 +531,29 @@ static void ControlTask(void *argument)
     }
 }
 
+#define STACK_MARGIN_BYTES 128U
+
+/* 各业务线程栈的历史最小余量都不少于 128 字节才算通过 */
+static uint8_t StackMarginOk(void)
+{
+    osThreadId_t thread[5];
+    uint8_t i;
+
+    thread[0] = currentTaskHandle;
+    thread[1] = voltageTaskHandle;
+    thread[2] = dataTaskHandle;
+    thread[3] = controlTaskHandle;
+    thread[4] = osThreadGetId();
+    for (i = 0U; i < 5U; i++)
+    {
+        if (thread[i] == NULL || osThreadGetStackSpace(thread[i]) < STACK_MARGIN_BYTES)
+        {
+            return 0U;
+        }
+    }
+    return 1U;
+}
+
 /* 报告线程 */
 static void ReportTask(void *argument)
 {
@@ -577,10 +575,12 @@ static void ReportTask(void *argument)
         tick += 1000U;
         osDelayUntil(tick);
 
-        /* 4. 采温度，和电流线程共用 adc 锁 */
+        /* 4. 采温度。先避开 SPI，再和电流线程共用 adc 锁 */
+        osMutexAcquire(spiMutexHandle, osWaitForever);
         osMutexAcquire(adcMutexHandle, osWaitForever);
         Temp_SamplePush();
         osMutexRelease(adcMutexHandle);
+        osMutexRelease(spiMutexHandle);
 
         /* 5. 翻转 LED */
         LEDXToggle();
@@ -591,8 +591,9 @@ static void ReportTask(void *argument)
         osMutexRelease(dataMutexHandle);
         USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
 
-        /* 7. 三条存活标志都在，才喂狗并清掉 */
-        if (currentAlive != 0U && voltageAlive != 0U && controlAlive != 0U)
+        /* 7. 三条存活标志都在，且五条业务线程栈还剩至少 128 字节，才喂狗并清掉 */
+        if (currentAlive != 0U && voltageAlive != 0U && controlAlive != 0U &&
+            StackMarginOk() != 0U)
         {
             HAL_IWDG_Refresh(&hiwdg);
             currentAlive = 0U;

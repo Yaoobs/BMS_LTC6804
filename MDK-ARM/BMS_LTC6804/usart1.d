@@ -42,3 +42,14 @@ bms_ltc6804\usart1.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 bms_ltc6804\usart1.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 bms_ltc6804\usart1.o: ../Core/PeripheralInc/os.h
 bms_ltc6804\usart1.o: ../Core/PeripheralInc/store.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+bms_ltc6804\usart1.o: ../Core/Inc/FreeRTOSConfig.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+bms_ltc6804\usart1.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
