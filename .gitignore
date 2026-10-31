@@ -1,0 +1,6 @@
+# Keil 编译输出
+MDK-ARM/BMS_LTC6804/
+
+# 汇编列表与 Event Recorder 桩
+MDK-ARM/*.lst
+MDK-ARM/*.scvd
