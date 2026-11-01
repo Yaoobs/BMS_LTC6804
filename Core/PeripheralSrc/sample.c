@@ -4,7 +4,7 @@ int16_t Current;
 uint8_t temp;
 
 #define CURRENT_AVG_LEN        100
-#define CURRENT_ADC_BASE_MV    1366
+#define CURRENT_ADC_BASE_MV    1361
 #define CURRENT_MV_FRAC        10
 #define CURRENT_DEADBAND_X10   5
 #define CURRENT_PER_MV         50
@@ -78,7 +78,7 @@ static uint16_t Current_AverageMvX10(void)
 
 /*
  * 100 ms：偏差也用 0.1 mV。
- * delta_x10 = 1366 * 10 - avg_x10
+ * delta_x10 = 1361 * 10 - avg_x10
  * |delta_x10| <= 5（±0.5 mV）时电流为 0。
  * 超出后 Current = delta_x10 * (50 / 10)，1 mV 仍是 50。
  */
@@ -96,7 +96,7 @@ void Current_CalcFromAverage(void)
     }
 
     avg_x10 = Current_AverageMvX10();
-    /* 零点 1366 mV 换成 0.1 mV */
+    /* 零点 1361 mV 换成 0.1 mV */
     base_x10 = (int32_t)CURRENT_ADC_BASE_MV * CURRENT_MV_FRAC;
     /* 高于零点为负，低于零点为正 */
     delta_x10 = base_x10 - (int32_t)avg_x10;

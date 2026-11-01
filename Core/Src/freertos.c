@@ -99,6 +99,9 @@ DataSnapshot dataSnapshot;
 static volatile uint8_t currentAlive;
 static volatile uint8_t voltageAlive;
 static volatile uint8_t controlAlive;
+/* 四组读完后再过这么久，电流点才入窗。0 表示还没发过电压 SPI */
+#define SPI_SETTLE_MS 20U
+static volatile uint32_t spiSampleAfter;
 static osThreadId_t currentTaskHandle;
 static osThreadId_t voltageTaskHandle;
 static osThreadId_t dataTaskHandle;
@@ -222,10 +225,13 @@ static void CurrentTask(void *argument)
         tick += 1U;
         osDelayUntil(tick);
 
-        /* 4. 采一个点。先避开正在进行的 SPI，再和报告线程共用 adc 锁 */
+        /* 4. 先避开正在进行的 SPI。这次电压 SPI 结束前，以及结束后 20 ms 内，不入窗。1 ms 格子不挪 */
         osMutexAcquire(spiMutexHandle, osWaitForever);
         osMutexAcquire(adcMutexHandle, osWaitForever);
-        Current_SamplePush();
+        if ((int32_t)(osKernelGetTickCount() - spiSampleAfter) >= 0)
+        {
+            Current_SamplePush();
+        }
         osMutexRelease(adcMutexHandle);
         osMutexRelease(spiMutexHandle);
 
@@ -283,8 +289,9 @@ static void VoltageTask(void *argument)
         tick += 100U;
         osDelayUntil(tick);
 
-        /* 4. 发 ADCV，随即放开 SPI 锁 */
+        /* 4. 发 ADCV。这次 SPI 没结束前，电流不入窗 */
         osMutexAcquire(spiMutexHandle, osWaitForever);
+        spiSampleAfter = osKernelGetTickCount() + 100U;
         LTC6804_adcv();
         osMutexRelease(spiMutexHandle);
 
@@ -299,6 +306,11 @@ static void VoltageTask(void *argument)
             if (LTC6804_rdcv_group(group, cell_codes) != 0)
             {
                 msg.pec_mask |= (uint8_t)(1U << (group - 1U));
+            }
+            /* 四组读完：从这一拍再过 20 ms 才入窗 */
+            if (group == 4U)
+            {
+                spiSampleAfter = osKernelGetTickCount() + SPI_SETTLE_MS;
             }
             osMutexRelease(spiMutexHandle);
         }
