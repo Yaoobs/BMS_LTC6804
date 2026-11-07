@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "can.h"
 #include "iwdg.h"
 #include "spi.h"
 #include "usart.h"
@@ -96,6 +97,7 @@ int main(void)
   MX_ADC1_Init();
   MX_USART1_UART_Init();
   MX_IWDG_Init();
+  MX_CAN_Init();
   /* USER CODE BEGIN 2 */
   Os_Init();
   /* USER CODE END 2 */
