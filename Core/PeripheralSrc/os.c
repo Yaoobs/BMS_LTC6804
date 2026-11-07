@@ -162,8 +162,8 @@ void Os_Init(void)
 	} //初始化增加延时
     HAL_ADCEx_Calibration_Start(&hadc1); /* 校准 ADC */
 	LTC6804_initialize();                /* LTC6804初始化配置 */
-    USART1_Init();
-//	CAN_Init();
+//    USART1_Init();
+	CAN_Init();
 	
 	if (Store_Init() == 0)
     {

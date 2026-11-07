@@ -69,10 +69,10 @@ void CAN_Send(uint32_t StdId, uint8_t *pData, uint8_t Len)
 
     if (HAL_CAN_AddTxMessage(&hcan, &txHeader, pData, &txMailbox) == HAL_OK)
     {
-        printf("CAN 发送数据成功!\r\n");
-        printf("发送的报文信息如下：\r\n");
-        printf("标准 ID：0x%03X\r\n", txHeader.StdId);
-        printf("帧类型：%s\r\n", (txHeader.RTR == CAN_RTR_DATA) ? "数据帧" : "远程帧");
+//        printf("CAN 发送数据成功!\r\n");
+//        printf("发送的报文信息如下：\r\n");
+//        printf("标准 ID：0x%03X\r\n", txHeader.StdId);
+//        printf("帧类型：%s\r\n", (txHeader.RTR == CAN_RTR_DATA) ? "数据帧" : "远程帧");
     }
 }
 
@@ -89,24 +89,24 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, CAN_RxBuf);
 
     /* 串口打印报文信息 */
-		printf("\r\n========================\r\n");
-    printf("CAN 接收到数据：\r\n");
+//		printf("\r\n========================\r\n");
+//    printf("CAN 接收到数据：\r\n");
     
     /* 判断帧类型（标准帧或扩展帧） */
-    if (rxHeader.IDE == CAN_ID_STD)
-        printf("标准帧 ID：0x%03X\r\n", rxHeader.StdId);
-    else
-        printf("扩展帧 ID：0x%08X\r\n", rxHeader.ExtId);
+//    if (rxHeader.IDE == CAN_ID_STD)
+//        printf("标准帧 ID：0x%03X\r\n", rxHeader.StdId);
+//    else
+//        printf("扩展帧 ID：0x%08X\r\n", rxHeader.ExtId);
 
-    /* 打印帧类型和数据长度 */
-    printf("帧类型：%s\r\n", (rxHeader.RTR == CAN_RTR_DATA) ? "数据帧" : "远程帧");
-    printf("数据长度：%d 字节\r\n", rxHeader.DLC);
+//    /* 打印帧类型和数据长度 */
+//    printf("帧类型：%s\r\n", (rxHeader.RTR == CAN_RTR_DATA) ? "数据帧" : "远程帧");
+//    printf("数据长度：%d 字节\r\n", rxHeader.DLC);
 
-    /* 打印数据内容 */
-    printf("数据内容：");
+//    /* 打印数据内容 */
+//    printf("数据内容：");
     for (uint8_t i = 0; i < rxHeader.DLC; i++)
     {
-        printf("%02X ", CAN_RxBuf[i]);
+//        printf("%02X ", CAN_RxBuf[i]);
     }
-    printf("\r\n========================\r\n");
+//    printf("\r\n========================\r\n");
 }

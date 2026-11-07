@@ -207,14 +207,14 @@ void MX_FREERTOS_Init(void) {
     };
     osThreadNew(ReportTask, NULL, &reportTask_attributes);
   }
-//   {
-//     const osThreadAttr_t modbusTask_attributes = {
-//       .name = "mb",
-//       .stack_size = 1024,
-//       .priority = osPriorityLow,
-//     };
-//     osThreadNew(ModbusTask, NULL, &modbusTask_attributes);
-//   }
+   {
+     const osThreadAttr_t modbusTask_attributes = {
+       .name = "mb",
+       .stack_size = 1024,
+       .priority = osPriorityLow,
+     };
+     osThreadNew(ModbusTask, NULL, &modbusTask_attributes);
+   }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -642,7 +642,7 @@ static void ReportTask(void *argument)
         osMutexAcquire(dataMutexHandle, osWaitForever);
         snap = dataSnapshot;
         osMutexRelease(dataMutexHandle);
-       USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
+//       USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
 
         /* 7. 三条存活标志都在，且五条业务线程栈还剩至少 128 字节，才喂狗并清掉 */
         if (currentAlive != 0U && voltageAlive != 0U && controlAlive != 0U &&
