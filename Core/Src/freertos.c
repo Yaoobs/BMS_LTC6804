@@ -35,6 +35,7 @@
 #include "store.h"
 #include "usart1.h"
 #include "iwdg.h"
+#include "mb.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -121,6 +122,7 @@ static void VoltageTask(void *argument);
 static void DataTask(void *argument);
 static void ControlTask(void *argument);
 static void ReportTask(void *argument);
+static void ModbusTask(void *argument);
 osThreadId_t controlTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
@@ -205,6 +207,14 @@ void MX_FREERTOS_Init(void) {
     };
     osThreadNew(ReportTask, NULL, &reportTask_attributes);
   }
+//   {
+//     const osThreadAttr_t modbusTask_attributes = {
+//       .name = "mb",
+//       .stack_size = 1024,
+//       .priority = osPriorityLow,
+//     };
+//     osThreadNew(ModbusTask, NULL, &modbusTask_attributes);
+//   }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -433,14 +443,14 @@ static void DataTask(void *argument)
     }
 }
 
-void Control_PostLine(const char *line)
+int Control_PostLine(const char *line)
 {
     char msg[CMD_TEXT_LEN];
     uint8_t n;
 
     if (line == NULL || cmdQueueHandle == NULL || controlTaskHandle == NULL)
     {
-        return;
+        return -1;
     }
     for (n = 0U; n < (CMD_TEXT_LEN - 1U) && line[n] != '\0'; n++)
     {
@@ -448,17 +458,18 @@ void Control_PostLine(const char *line)
     }
     if (line[n] != '\0')
     {
-        return;
+        return -1;
     }
     msg[n] = '\0';
     if (osMessageQueuePut(cmdQueueHandle, msg, 0, 0) != osOK)
     {
-        return;
+        return -1;
     }
     if (osKernelGetState() == osKernelRunning)
     {
         (void)osThreadFlagsSet(controlTaskHandle, CTRL_FLAG_CMD);
     }
+    return 0;
 }
 
 /* 4. 状态和 MOS 确定后写均衡。SPI 锁只包住写配置 */
@@ -631,7 +642,7 @@ static void ReportTask(void *argument)
         osMutexAcquire(dataMutexHandle, osWaitForever);
         snap = dataSnapshot;
         osMutexRelease(dataMutexHandle);
-        USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
+       USART1_SendTxStr(snap.soc, snap.total_mv, snap.current);
 
         /* 7. 三条存活标志都在，且五条业务线程栈还剩至少 128 字节，才喂狗并清掉 */
         if (currentAlive != 0U && voltageAlive != 0U && controlAlive != 0U &&
@@ -643,6 +654,20 @@ static void ReportTask(void *argument)
             controlAlive = 0U;
         }
         /* 8. 回到步骤 2 */
+    }
+}
+
+static void ModbusTask(void *argument)
+{
+    (void)argument;
+    if (eMBInit(MB_RTU, 1, 0, 115200, MB_PAR_NONE) == MB_ENOERR)
+    {
+        (void)eMBEnable();
+    }
+    for (;;)
+    {
+        (void)eMBPoll();
+        osDelay(1);
     }
 }
 /* USER CODE END Application */

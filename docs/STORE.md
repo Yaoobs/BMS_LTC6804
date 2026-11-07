@@ -62,7 +62,7 @@ F103 的编程粒度是 16 位。`HAL_FLASH_Program()` 的类型用 `FLASH_TYPEP
 
 这个函数不改 SRAM 里的 `store_user`，也不改正在使用的 `SOC` 和 `total_voltage`。清除之后如果再调用 `Store_Save()`，或再收到 `S`，运行中的值会重新写入这一页。不要在中断或 100 ms 任务里调用。
 
-读取、保存、清除都只在成功后发一行。`Store_Init()` 返回 0 时发送 `读取成功`。`Store_Save()` 校验通过后发送 `保存成功`。`Store_Clear()` 确认整页都是 `0xFF` 后发送 `清除成功`。三行都加 `\r\n`，走 `USART1_SendText()`。它和 1 秒状态文本共用发送队列，队列满时这次提示不发。保存和清除的发送放在开中断之后。源文件里这三句用 GBK 字节写出，和现有串口文本一致。
+`Store_Init()`、`Store_Save()`、`Store_Clear()` 成功后原来各发一行提示。这三处 `USART1_SendText()` 已注释，USART1 交给 Modbus。成功与否看函数返回值；`Clear` 命令的 Modbus 回显不看这个返回值。
 
 ## store.h
 

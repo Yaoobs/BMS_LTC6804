@@ -12,7 +12,7 @@ extern uint8_t balance_on_flag;
 extern void SOC_Estimator(void);
 extern void JudgeBMSState(void);
 extern void Store_SaveOnStandby(void);
-extern void Control_PostLine(const char *line);
+extern int Control_PostLine(const char *line);
 extern void LEDXToggle(void);
 
 #endif

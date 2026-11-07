@@ -29,7 +29,7 @@ int8_t Store_Init(void)
         return -1;
     }
     memcpy(&store_user, flash, sizeof(store_user));
-    USART1_SendText("\xB6\xC1\xC8\xA1\xB3\xC9\xB9\xA6");
+    /* USART1_SendText("\xB6\xC1\xC8\xA1\xB3\xC9\xB9\xA6"); */
     return 0;
 }
 
@@ -83,7 +83,7 @@ HAL_StatusTypeDef Store_Save(void)
     {
         return HAL_ERROR;
     }
-    USART1_SendText("\xB1\xA3\xB4\xE6\xB3\xC9\xB9\xA6");
+    /* USART1_SendText("\xB1\xA3\xB4\xE6\xB3\xC9\xB9\xA6"); */
     return HAL_OK;
 }
 
@@ -119,6 +119,6 @@ HAL_StatusTypeDef Store_Clear(void)
             return HAL_ERROR;
         }
     }
-    USART1_SendText("\xC7\xE5\xB3\xFD\xB3\xC9\xB9\xA6");
+    /* USART1_SendText("\xC7\xE5\xB3\xFD\xB3\xC9\xB9\xA6"); */
     return HAL_OK;
 }
