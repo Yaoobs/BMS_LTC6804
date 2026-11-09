@@ -4,7 +4,7 @@ int16_t Current;
 uint8_t temp;
 
 #define CURRENT_AVG_LEN        100
-#define CURRENT_ADC_BASE_MV    1361
+#define CURRENT_ADC_BASE_MV    1365
 #define CURRENT_MV_FRAC        10
 #define CURRENT_DEADBAND_X10   5
 #define CURRENT_PER_MV         50
