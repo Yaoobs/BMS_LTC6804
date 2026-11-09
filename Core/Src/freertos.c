@@ -36,6 +36,7 @@
 #include "usart1.h"
 #include "iwdg.h"
 #include "mb.h"
+#include "can1.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -93,6 +94,7 @@ osMessageQueueId_t voltageQueueHandle;
 osMessageQueueId_t resultQueueHandle;
 osMessageQueueId_t cmdQueueHandle;
 osMessageQueueId_t txQueueHandle;
+osMessageQueueId_t canCmdQueueHandle;
 osMutexId_t spiMutexHandle;
 osMutexId_t dataMutexHandle;
 osMutexId_t adcMutexHandle;
@@ -123,6 +125,8 @@ static void DataTask(void *argument);
 static void ControlTask(void *argument);
 static void ReportTask(void *argument);
 static void ModbusTask(void *argument);
+static void CanTask(void *argument);
+static void Control_HandleCanCommand(uint8_t cmd);
 osThreadId_t controlTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
@@ -160,6 +164,7 @@ void MX_FREERTOS_Init(void) {
   resultQueueHandle = osMessageQueueNew(1, sizeof(ResultMsg), NULL);
   cmdQueueHandle = osMessageQueueNew(4, CMD_TEXT_LEN, NULL);
   txQueueHandle = osMessageQueueNew(4, sizeof(TxFrame), NULL);
+  canCmdQueueHandle = osMessageQueueNew(4, 1U, NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -214,6 +219,14 @@ void MX_FREERTOS_Init(void) {
        .priority = osPriorityLow,
      };
      osThreadNew(ModbusTask, NULL, &modbusTask_attributes);
+   }
+   {
+     const osThreadAttr_t canTask_attributes = {
+       .name = "can",
+       .stack_size = 256,
+       .priority = osPriorityLow,
+     };
+     osThreadNew(CanTask, NULL, &canTask_attributes);
    }
   /* USER CODE END RTOS_THREADS */
 
@@ -554,8 +567,8 @@ static void ControlTask(void *argument)
     }
     for (;;)
     {
-        /* 1. 命令或结果标志，有一个就醒 */
-        flags = osThreadFlagsWait(CTRL_FLAG_CMD | CTRL_FLAG_RESULT,
+        /* 1. 命令、结果或 CAN 命令，有一个就醒 */
+        flags = osThreadFlagsWait(CTRL_FLAG_CMD | CTRL_FLAG_RESULT | CTRL_FLAG_CAN,
                                   osFlagsWaitAny, osWaitForever);
         if ((int32_t)flags < 0)
         {
@@ -576,6 +589,16 @@ static void ControlTask(void *argument)
             osMessageQueueGet(resultQueueHandle, &result, NULL, 0) == osOK)
         {
             Control_HandleResult(&result);
+        }
+
+        /* 4. 处理 CAN 收到的控制命令（0x200） */
+        if ((flags & CTRL_FLAG_CAN) != 0U)
+        {
+            uint8_t can_cmd;
+            while (osMessageQueueGet(canCmdQueueHandle, &can_cmd, NULL, 0) == osOK)
+            {
+                Control_HandleCanCommand(can_cmd);
+            }
         }
 
         /* 5. 置存活标志，报告线程喂狗后清掉 */
@@ -668,6 +691,72 @@ static void ModbusTask(void *argument)
     {
         (void)eMBPoll();
         osDelay(1);
+    }
+}
+
+/* CAN 控制命令处理：0x00=待机, 0x01=充电, 0x02=放电 */
+static void Control_HandleCanCommand(uint8_t cmd)
+{
+    uint8_t save_on_standby = 0U;
+
+    if (cmd == 0x00U)
+    {
+        StateRequest = Standby;
+        save_on_standby = 1U;
+    }
+    else if (cmd == 0x01U)
+    {
+        StateRequest = Charging;
+    }
+    else if (cmd == 0x02U)
+    {
+        StateRequest = Driving;
+    }
+    else
+    {
+        return;
+    }
+
+    state_machine_step();
+    if (BMS_State == BMS_Standby &&
+        (StateRequest == Charging || StateRequest == Driving))
+    {
+        state_machine_step();
+    }
+    JudgeBMSState();
+    if (save_on_standby != 0U)
+    {
+        Store_SaveOnStandby();
+    }
+}
+
+/* CAN 周期上报线程：每 100 ms 发送一帧 0x100 */
+static void CanTask(void *argument)
+{
+    uint32_t tick = osKernelGetTickCount();
+    uint8_t buf[8];
+
+    (void)argument;
+    for (;;)
+    {
+        tick += 100U;
+        osDelayUntil(tick);
+
+        /* 总电压 (2B, 大端) */
+        buf[0] = (uint8_t)(total_voltage >> 8);
+        buf[1] = (uint8_t)(total_voltage & 0xFFU);
+        /* 电流 (2B, 大端) */
+        buf[2] = (uint8_t)((uint16_t)Current >> 8);
+        buf[3] = (uint8_t)((uint16_t)Current & 0xFFU);
+        /* SOC (1B, 0~100) */
+        buf[4] = (uint8_t)(SOC / 100U);
+        /* 状态 (1B): 0=待机, 1=充电, 2=放电, 3=故障 */
+        buf[5] = BMS_State;
+        /* 预留 (2B) */
+        buf[6] = 0U;
+        buf[7] = 0U;
+
+        CAN_Send(0x100U, buf, 8U);
     }
 }
 /* USER CODE END Application */

@@ -2,18 +2,21 @@
 #define __BSP_CAN_H
 
 #include "main.h"
-#include <stdio.h>	//Ê¹ÓÃ printf
+#include <stdio.h>	//ä½¿ç”¨ printf
 
-/************ Íâ²¿ÉùÃ÷ ************/
-extern uint8_t CAN_RxBuf[8];       // ½ÓÊÕ»º³åÇø£¨×î´ó 8 ×Ö½Ú£©
+/************ æ§åˆ¶çº¿ç¨‹æ ‡å¿— ************/
+#define CTRL_FLAG_CAN      0x04U    // CAN æ”¶åˆ° 0x200 æ§åˆ¶å‘½ä»¤
 
-/************ CAN ÍâÉèÒı½Å¶¨Òå ************/
-#define CAN_RX_Pin        GPIO_PIN_11      // CAN ½ÓÊÕÒı½Å PA11
-#define CAN_RX_GPIO_Port  GPIOA            // CAN RX ËùÊô GPIO ¶Ë¿Ú
-#define CAN_TX_Pin        GPIO_PIN_12      // CAN ·¢ËÍÒı½Å PA12
-#define CAN_TX_GPIO_Port  GPIOA            // CAN TX ËùÊô GPIO ¶Ë¿Ú
+/************ å¤–éƒ¨å£°æ˜ ************/
+extern uint8_t CAN_RxBuf[8];       // æ¥æ”¶ç¼“å†²åŒºï¼ˆæœ€å¤§ 8 å­—èŠ‚ï¼‰
 
-/************ º¯ÊıÉùÃ÷ ************/
+/************ CAN å¤–è®¾å¼•è„šå®šä¹‰ ************/
+#define CAN_RX_Pin        GPIO_PIN_11      // CAN æ¥æ”¶å¼•è„š PA11
+#define CAN_RX_GPIO_Port  GPIOA            // CAN RX æ‰€å± GPIO ç«¯å£
+#define CAN_TX_Pin        GPIO_PIN_12      // CAN å‘é€å¼•è„š PA12
+#define CAN_TX_GPIO_Port  GPIOA            // CAN TX æ‰€å± GPIO ç«¯å£
+
+/************ å‡½æ•°å£°æ˜ ************/
 void CAN_Filter_Config(void);
 void CAN_Init(void);
 void CAN_Send(uint32_t StdId, uint8_t *pData, uint8_t Len);

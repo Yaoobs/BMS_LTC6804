@@ -1,112 +1,104 @@
 #include "can1.h"
 #include "can.h"
+#include "cmsis_os.h"
 
-uint8_t CAN_RxBuf[8];   // ±ê×¼Êı¾İÖ¡£¬×î´ó 8 ×Ö½Ú
+/* ç”± freertos.c åˆ›å»ºçš„ CAN å‘½ä»¤é˜Ÿåˆ—ä¸æ§åˆ¶çº¿ç¨‹å¥æŸ„ */
+extern osMessageQueueId_t canCmdQueueHandle;
+extern osThreadId_t controlTaskHandle;
+
+uint8_t CAN_RxBuf[8];   // æ ‡å‡†æ•°æ®å¸§ï¼Œæœ€å¤§ 8 å­—èŠ‚
 
 /**
-  * @brief  ÅäÖÃ CAN ÂË²¨Æ÷
-  * @note   ÉèÖÃ CAN ½ÓÊÕÂË²¨Æ÷²ÎÊı£¬½öÔÊĞí½ÓÊÕ±ê×¼ ID Îª 0x123 µÄÏûÏ¢
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  é…ç½® CAN æ»¤æ³¢å™¨
+  * @note   è®¾ç½® CAN æ¥æ”¶æ»¤æ³¢å™¨å‚æ•°ï¼Œä»…å…è®¸æ¥æ”¶æ ‡å‡† ID ä¸º 0x200 çš„æ§åˆ¶å‘½ä»¤
+  * @param  æ— 
+  * @retval æ— 
   */
 void CAN_Filter_Config(void)
 {
-    CAN_FilterTypeDef can_filter = {0};           // ¶¨Òå CAN ÂË²¨Æ÷½á¹¹Ìå²¢ÇåÁã
+    CAN_FilterTypeDef can_filter = {0};           // å®šä¹‰ CAN æ»¤æ³¢å™¨ç»“æ„ä½“å¹¶æ¸…é›¶
 
-    can_filter.FilterBank = 0;                     // Ê¹ÓÃµÚ 0 ¸öÂË²¨Æ÷×é
-    can_filter.FilterMode = CAN_FILTERMODE_IDMASK; // ÉèÖÃÂË²¨Æ÷Ä£Ê½ÎªÑÚÂëÄ£Ê½
-    can_filter.FilterScale = CAN_FILTERSCALE_32BIT; // 32 Î»ÂË²¨Æ÷
-    can_filter.FilterIdHigh     = (0x123 << 5);    // ¸ß 16 Î» ID£¬±ê×¼Ö¡ ID ×óÒÆ 5 Î»
-    can_filter.FilterIdLow      = 0x0000;          // ±ê×¼Ö¡ÏÂµÍ 16 Î»Îª 0
-    can_filter.FilterMaskIdHigh = (0x7FF << 5);    // ¸ß 16 Î»ÑÚÂë£¬½öÆ¥Åä 11 Î»±ê×¼ ID
-    can_filter.FilterMaskIdLow  = 0x0000;          // µÍ 16 Î»ÑÚÂëÎª 0
-    can_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0; // Ö¸¶¨½ÓÊÕ FIFO0
-    can_filter.FilterActivation = ENABLE;          // ¼¤»îÂË²¨Æ÷
+    can_filter.FilterBank = 0;                     // ä½¿ç”¨ç¬¬ 0 ä¸ªæ»¤æ³¢å™¨ç»„
+    can_filter.FilterMode = CAN_FILTERMODE_IDMASK; // è®¾ç½®æ»¤æ³¢å™¨æ¨¡å¼ä¸ºæ©ç æ¨¡å¼
+    can_filter.FilterScale = CAN_FILTERSCALE_32BIT; // 32 ä½æ»¤æ³¢å™¨
+    can_filter.FilterIdHigh     = (0x200 << 5);    // é«˜ 16 ä½ IDï¼Œæ ‡å‡†å¸§ ID å·¦ç§» 5 ä½
+    can_filter.FilterIdLow      = 0x0000;          // æ ‡å‡†å¸§ä¸‹ä½ 16 ä½ä¸º 0
+    can_filter.FilterMaskIdHigh = (0x7FF << 5);    // é«˜ 16 ä½æ©ç ï¼Œä»…åŒ¹é… 11 ä½æ ‡å‡† ID
+    can_filter.FilterMaskIdLow  = 0x0000;          // ä½ 16 ä½æ©ç ä¸º 0
+    can_filter.FilterFIFOAssignment = CAN_FILTER_FIFO0; // æŒ‡å®šæ¥æ”¶ FIFO0
+    can_filter.FilterActivation = ENABLE;          // æ¿€æ´»æ»¤æ³¢å™¨
 
-    if(HAL_CAN_ConfigFilter(&hcan, &can_filter) != HAL_OK) // ÅäÖÃÂË²¨Æ÷
+    if(HAL_CAN_ConfigFilter(&hcan, &can_filter) != HAL_OK) // é…ç½®æ»¤æ³¢å™¨
     {
-        Error_Handler();                           // ÅäÖÃÊ§°Ü£¬Ö´ĞĞ´íÎó´¦Àí
+        Error_Handler();                           // é…ç½®å¤±è´¥ï¼Œæ‰§è¡Œé”™è¯¯å¤„ç†
     }
 }
 
 
 /**
- * @brief  ÍêÕû³õÊ¼»¯CANµÄ¹¦ÄÜ
- * @param  ÎŞ
- * @retval ÎŞ
+ * @brief  å®Œæ•´åˆå§‹åŒ–CANçš„åŠŸèƒ½
+ * @param  æ— 
+ * @retval æ— 
  */
 void CAN_Init(void)
 {
     
-    /* ÅäÖÃ CAN ¹ıÂËÆ÷ */
+    /* é…ç½® CAN è¿‡æ»¤å™¨ */
     CAN_Filter_Config();
 	
-	/* Æô¶¯ CAN ÍâÉè */
+	/* å¯åŠ¨ CAN å¤–è®¾ */
 	HAL_CAN_Start(&hcan);
 
-	/* ¼¤»î½ÓÊÕÖĞ¶Ï£¨FIFO0 ÏûÏ¢¹ÒÆğÖĞ¶Ï£© */
+	/* æ¿€æ´»æ¥æ”¶ä¸­æ–­ï¼ˆFIFO0 æ¶ˆæ¯æŒ‚èµ·ä¸­æ–­ï¼‰ */
 	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 	
 
 }
 
 /**
-  * @brief  ·¢ËÍ CAN Êı¾İ
-  * @param  StdId ±ê×¼ ID
-  * @param  pData Ö¸Ïò·¢ËÍÊı¾İµÄÖ¸Õë
-  * @param  Len   ·¢ËÍÊı¾İ³¤¶È£¨×î´ó 8 ×Ö½Ú£©
-  * @retval ÎŞ
+  * @brief  å‘é€ CAN æ•°æ®
+  * @param  StdId æ ‡å‡† ID
+  * @param  pData æŒ‡å‘å‘é€æ•°æ®çš„æŒ‡é’ˆ
+  * @param  Len   å‘é€æ•°æ®é•¿åº¦ï¼ˆæœ€å¤§ 8 å­—èŠ‚ï¼‰
+  * @retval æ— 
   */
 void CAN_Send(uint32_t StdId, uint8_t *pData, uint8_t Len)
 {
-    CAN_TxHeaderTypeDef txHeader;                 // ¶¨Òå CAN ·¢ËÍ±¨ÎÄÍ·
-    uint32_t txMailbox;                           // ±£´æ·¢ËÍÓÊÏä±àºÅ
+    CAN_TxHeaderTypeDef txHeader;                 // å®šä¹‰ CAN å‘é€æŠ¥æ–‡å¤´
+    uint32_t txMailbox;                           // ä¿å­˜å‘é€é‚®ç®±ç¼–å·
 
-    txHeader.StdId = StdId;                       // ÉèÖÃ±ê×¼ ID
-    txHeader.IDE = CAN_ID_STD;                    // ±ê×¼Ö¡
-    txHeader.RTR = CAN_RTR_DATA;                  // Êı¾İÖ¡
-    txHeader.DLC = Len;                           // Êı¾İ³¤¶È
+    txHeader.StdId = StdId;                       // è®¾ç½®æ ‡å‡† ID
+    txHeader.IDE = CAN_ID_STD;                    // æ ‡å‡†å¸§
+    txHeader.RTR = CAN_RTR_DATA;                  // æ•°æ®å¸§
+    txHeader.DLC = Len;                           // æ•°æ®é•¿åº¦
 
     if (HAL_CAN_AddTxMessage(&hcan, &txHeader, pData, &txMailbox) == HAL_OK)
     {
-//        printf("CAN ·¢ËÍÊı¾İ³É¹¦!\r\n");
-//        printf("·¢ËÍµÄ±¨ÎÄĞÅÏ¢ÈçÏÂ£º\r\n");
-//        printf("±ê×¼ ID£º0x%03X\r\n", txHeader.StdId);
-//        printf("Ö¡ÀàĞÍ£º%s\r\n", (txHeader.RTR == CAN_RTR_DATA) ? "Êı¾İÖ¡" : "Ô¶³ÌÖ¡");
+
     }
 }
 
 /**
-  * @brief  CAN ½ÓÊÕ FIFO0 ÏûÏ¢»Øµ÷º¯Êı
-  * @param  hcan Ö¸Ïò CAN ÍâÉè¾ä±úµÄÖ¸Õë
-  * @retval ÎŞ
+  * @brief  CAN æ¥æ”¶ FIFO0 æ¶ˆæ¯å›è°ƒå‡½æ•°
+  * @param  hcan æŒ‡å‘ CAN å¤–è®¾å¥æŸ„çš„æŒ‡é’ˆ
+  * @retval æ— 
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    CAN_RxHeaderTypeDef rxHeader;                 // ¶¨Òå CAN ½ÓÊÕ±¨ÎÄÍ·
+    CAN_RxHeaderTypeDef rxHeader;                 // å®šä¹‰ CAN æ¥æ”¶æŠ¥æ–‡å¤´
+    uint8_t cmd;
 
-    /* ¶ÁÈ¡½ÓÊÕ FIFO0 µÄÏûÏ¢ */
+    /* è¯»å–æ¥æ”¶ FIFO0 çš„æ¶ˆæ¯ */
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, CAN_RxBuf);
 
-    /* ´®¿Ú´òÓ¡±¨ÎÄĞÅÏ¢ */
-//		printf("\r\n========================\r\n");
-//    printf("CAN ½ÓÊÕµ½Êı¾İ£º\r\n");
-    
-    /* ÅĞ¶ÏÖ¡ÀàĞÍ£¨±ê×¼Ö¡»òÀ©Õ¹Ö¡£© */
-//    if (rxHeader.IDE == CAN_ID_STD)
-//        printf("±ê×¼Ö¡ ID£º0x%03X\r\n", rxHeader.StdId);
-//    else
-//        printf("À©Õ¹Ö¡ ID£º0x%08X\r\n", rxHeader.ExtId);
-
-//    /* ´òÓ¡Ö¡ÀàĞÍºÍÊı¾İ³¤¶È */
-//    printf("Ö¡ÀàĞÍ£º%s\r\n", (rxHeader.RTR == CAN_RTR_DATA) ? "Êı¾İÖ¡" : "Ô¶³ÌÖ¡");
-//    printf("Êı¾İ³¤¶È£º%d ×Ö½Ú\r\n", rxHeader.DLC);
-
-//    /* ´òÓ¡Êı¾İÄÚÈİ */
-//    printf("Êı¾İÄÚÈİ£º");
-    for (uint8_t i = 0; i < rxHeader.DLC; i++)
+    /* ä»…å¤„ç† 0x200 æ§åˆ¶å‘½ä»¤å¸§ï¼Œå–é¦–å­—èŠ‚ä½œä¸ºå‘½ä»¤ */
+    if (rxHeader.StdId == 0x200U && rxHeader.DLC >= 1U)
     {
-//        printf("%02X ", CAN_RxBuf[i]);
+        cmd = CAN_RxBuf[0];
+        (void)osMessageQueuePut(canCmdQueueHandle, &cmd, 0U, 0U);
+        if (controlTaskHandle != NULL)
+        {
+            (void)osThreadFlagsSet(controlTaskHandle, CTRL_FLAG_CAN);
+        }
     }
-//    printf("\r\n========================\r\n");
 }
